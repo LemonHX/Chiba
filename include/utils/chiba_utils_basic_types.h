@@ -15,9 +15,9 @@
 #define i32 int
 #define i64 long long
 
-#define f16 _Float16 
 #define f32 float
 #define f64 double
 
+#ifndef NULL
 #define NULL ((void *)0)
-
+#endif
