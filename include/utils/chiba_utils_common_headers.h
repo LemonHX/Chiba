@@ -7,14 +7,15 @@
 
 // malloc
 #if defined(_MSC_VER)
-#include <winsock2.h>
 #include <malloc.h>
+#include <winsock2.h>
 #define alloca _alloca
 #define ssize_t ptrdiff_t
 #endif
 #if defined(__APPLE__)
 #include <malloc/malloc.h>
-#elif defined(__linux__) || defined(__ANDROID__) || defined(__CYGWIN__) || defined(__GLIBC__)
+#elif defined(__linux__) || defined(__ANDROID__) || defined(__CYGWIN__) ||     \
+    defined(__GLIBC__)
 #include <malloc.h>
 #elif defined(__FreeBSD__)
 #include <malloc_np.h>
@@ -34,5 +35,3 @@
 
 // arg
 #include <stdarg.h>
-
-

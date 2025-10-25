@@ -9,4 +9,6 @@
 
 #define UTILS static inline
 
+#define C8(name) CHIBA_##name
+
 #define BEFORE_START __attribute__((constructor)) static
