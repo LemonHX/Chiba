@@ -7,6 +7,11 @@
 - [ ] ios aarch64 testing
 - [ ] wasm64 fiber impl
 
+## TODO
+
+- [ ] reflection need a global static vector to get type ctor
+- [ ] reflection need type name in metainfo
+
 ## Building
 
 please use c-compiler caching tool for incremental builds

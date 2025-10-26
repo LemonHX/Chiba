@@ -36,14 +36,26 @@ BEFORE_START void abort_if_be(void) {
 #define min_of_type(type)                                                      \
   PRIVATE inline type min_##type(type a, type b) { return (a < b) ? a : b; }
 
-max_of_type(u8) max_of_type(u16) max_of_type(u32) max_of_type(u64)
-    max_of_type(i8) max_of_type(i16) max_of_type(i32) max_of_type(i64)
+max_of_type(u8);
+max_of_type(u16);
+max_of_type(u32);
+max_of_type(u64);
+max_of_type(i8);
+max_of_type(i16);
+max_of_type(i32);
+max_of_type(i64);
 
-        min_of_type(u8) min_of_type(u16) min_of_type(u32) min_of_type(u64)
-            min_of_type(i8) min_of_type(i16) min_of_type(i32) min_of_type(i64)
+min_of_type(u8);
+min_of_type(u16);
+min_of_type(u32);
+min_of_type(u64);
+min_of_type(i8);
+min_of_type(i16);
+min_of_type(i32);
+min_of_type(i64);
 
-    /* WARNING: undefined if a = 0 */
-    PRIVATE inline i32 clz32(u32 a) {
+/* WARNING: undefined if a = 0 */
+PRIVATE inline i32 clz32(u32 a) {
 #if defined(_MSC_VER) && !defined(__clang__)
   unsigned long index;
   _BitScanReverse(&index, a);

@@ -22,7 +22,7 @@ static const u8 DEC_DIGITS_LUT[200] = {
 
 static const u64 MAX_STR_LEN = 20;
 
-UTILS i8 *itoa(i64 value, i8 *buffer) {
+UTILS cstr itoa(i64 value, i8 *buffer) {
   const bool is_nonnegative = value >= 0;
   u64 n = is_nonnegative ? (u64)(value) : (u64)(-(value + 1)) + 1;
 
@@ -67,7 +67,7 @@ UTILS i8 *itoa(i64 value, i8 *buffer) {
   return buffer + curr;
 }
 
-UTILS i8 *utoa(u64 value, i8 *buffer) {
+UTILS cstr utoa(u64 value, i8 *buffer) {
   u64 n = value;
 
   u64 curr = MAX_STR_LEN;
@@ -104,4 +104,22 @@ UTILS i8 *utoa(u64 value, i8 *buffer) {
   }
 
   return buffer + curr;
+}
+
+UTILS cstr ftoa(f32 value, i8 *buffer) {
+#warning TODO: implement ftoa
+  sprintf((char *)buffer, "%f", value);
+  return buffer;
+}
+
+UTILS cstr dtoa(f64 value, i8 *buffer) {
+#warning TODO: implement dtoa
+  sprintf((char *)buffer, "%lf", value);
+  return buffer;
+}
+
+UTILS cstr ptrtoa(void *ptr, i8 *buffer) {
+#warning TODO: implement ptrtoa
+  sprintf((char *)buffer, "%p", ptr);
+  return buffer;
 }

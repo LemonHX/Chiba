@@ -19,14 +19,17 @@ typedef int i32;
 typedef long long i64;
 typedef float f32;
 typedef double f64;
+typedef char *cstr;
+typedef void *anyptr;
 
 #ifndef NULL
 #define NULL ((void *)0)
 #endif
 
+// for compatibility, use cstr as inner string type
 typedef struct str {
-  i8 *data;
+  cstr data;
   u64 len;
 } str;
 
-#define STR(sstr) ((str){.data = (i8 *)(sstr), .len = sizeof(sstr) - 1})
+#define STR(cstr) ((str){.data = cstr, .len = sizeof(cstr) - 1})
