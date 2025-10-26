@@ -5,6 +5,7 @@
 #include "chiba_utils_compiler_opt.h"
 #include "chiba_utils_math.h"
 #include "chiba_utils_memory.h"
+#include "chiba_utils_refl.h"
 #include "chiba_utils_timer.h"
 #include "chiba_utils_visibility.h"
 #include "chiba_utils_xtoa.h"

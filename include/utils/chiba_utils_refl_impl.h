@@ -12,10 +12,8 @@
   const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_vtable = vvec_create(); \
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
@@ -30,10 +28,8 @@
   const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_vtable = vvec_create(); \
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
@@ -48,10 +44,8 @@
   const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_vtable = vvec_create(); \
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
@@ -67,10 +61,8 @@
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_vtable = vvec_create(); \
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
@@ -86,10 +78,8 @@
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field5)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_vtable = vvec_create(); \
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
@@ -105,10 +95,8 @@
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field5) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field6)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_vtable = vvec_create(); \
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
@@ -125,10 +113,8 @@
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field5) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field6) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field7)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_vtable = vvec_create(); \
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
@@ -145,10 +131,8 @@
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field5) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field6) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field7) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field8)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_vtable = vvec_create(); \
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)

@@ -48,10 +48,8 @@ def generate_struct_macro(n):
   const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {{        \\
       {expand_metadata}}};              \\
   DECLARE_CHIBA_METADATA(struct_name);                                         \\
-  PUBLIC static VVec *CHIBA_##struct_name##_vtable; \\
   PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \\
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) {{ \\
-  CHIBA_##struct_name##_vtable = vvec_create(); \\
   CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \\
   }} \\
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)

@@ -2,7 +2,6 @@
 #include "chiba_utils_basic_types.h"
 #include "chiba_utils_math.h"
 #include "chiba_utils_refl_vhashtable.h"
-#include "chiba_utils_refl_vvec.h"
 #include "chiba_utils_visibility.h"
 
 // used for reflection metadata
@@ -17,7 +16,6 @@ typedef struct CHIBA_FIELD_METAINFO {
 typedef struct CHIBA_METAINFO {
   const CHIBA_FIELD_METAINFO *fields;
   const u32 field_count;
-  const VVec *vtable;
   const VHashTable *field_name_to_index;
 } CHIBA_METAINFO;
 

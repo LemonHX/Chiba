@@ -1,4 +1,5 @@
 #pragma once
+#include "chiba_utils_abi.h"
 #include "chiba_utils_basic_types.h"
 #include "chiba_utils_memory.h"
 #include "chiba_utils_visibility.h"
@@ -14,7 +15,7 @@ typedef enum {
 typedef struct {
   u64 hash;
   str key;
-  u64 value;
+  API_FUNC_PTR value;
   VHashTableEntryState state;
 } VHashTableEntry;
 
@@ -25,21 +26,7 @@ typedef struct {
   u64 load_factor_percent;
 } VHashTable;
 
-UTILS u64 vhashtable_hash_str(str s) {
-  const u8 *bytes = (const u8 *)s.data;
-  u64 hash = 14695981039346656037ULL;
-  for (u64 i = 0; i < s.len; i++) {
-    hash ^= bytes[i];
-    hash *= 1099511628211ULL;
-  }
-  return hash;
-}
-
-UTILS int str_equals(str a, str b) {
-  if (a.len != b.len)
-    return 0;
-  return memcmp(a.data, b.data, a.len) == 0;
-}
+UTILS u64 vhashtable_hash_str(str s) { return _internal_str_hash(s); }
 
 UTILS str str_copy(str s) {
   i8 *new_data = (i8 *)malloc(s.len);
@@ -127,7 +114,7 @@ UTILS void vhashtable_resize(VHashTable *table) {
   free(old_entries);
 }
 
-UTILS void vhashtable_insert(VHashTable *table, str key, u64 value) {
+UTILS void vhashtable_insert(VHashTable *table, str key, API_FUNC_PTR value) {
   if (table == NULL || key.data == NULL) {
     fprintf(
         stderr,
@@ -176,7 +163,7 @@ UTILS void vhashtable_insert(VHashTable *table, str key, u64 value) {
   table->count++;
 }
 
-UTILS u64 vhashtable_get(VHashTable *table, str key) {
+UTILS API_FUNC_PTR vhashtable_get(VHashTable *table, str key) {
   if (table == NULL || key.data == NULL)
     return 0;
 

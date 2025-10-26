@@ -20,7 +20,8 @@ void print_dyn_ty(CHIBA_DYN_TY val) {
 }
 
 i32 main() {
-  C8(hi2) DEFER(clean_hi2) obj = _MK_CHIBA_hi2((C8(hi2)){.i = 42, .j = 100});
+  C8NS(hi2)
+  DEFER(clean_hi2) obj = _MK_CHIBA_hi2((C8NS(hi2)){.i = 42, .j = 100});
 
   char buffer[128];
   printf("Enter field name to get (i or j): ");
