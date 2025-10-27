@@ -14,7 +14,6 @@
 #define GET_STACK_PTR() ((void *)0)
 #endif
 
-#define API_MAX_STACK_USAGE 1024 * 1024 /* 1MB */
 
 #ifdef DEBUG
 #define STACK_HEAD                                                             \

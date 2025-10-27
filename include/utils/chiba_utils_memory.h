@@ -37,14 +37,18 @@ put_type_to_buffer(f32);
 put_type_to_buffer(f64);
 put_type_to_buffer(anyptr);
 
+#define DEFER(fn) __attribute__((cleanup(fn)))
+
+
 #define container_of_type_at(ptr, type, member)                                \
   ((type *)((u8 *)(ptr) - offsetof(type, member)))
+
+
 
 typedef void *(*ALLOC_FUNC)(u64 size);
 typedef void (*FREE_FUNC)(void *ptr);
 typedef void *(*REALLOC_FUNC)(void *ptr, u64 new_size);
 
-#define DEFER(fn) __attribute__((cleanup(fn)))
 
 typedef struct MEMORY_ALLOCATOR_HEADER {
   ALLOC_FUNC alloc;
