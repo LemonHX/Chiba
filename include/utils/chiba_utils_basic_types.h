@@ -8,6 +8,8 @@
 
 #ifndef __cplusplus
 typedef char bool;
+#define true 1
+#define false 0
 #endif
 typedef unsigned char u8;
 typedef unsigned short u16;
@@ -33,3 +35,4 @@ typedef struct str {
 } str;
 
 #define STR(cstr) ((str){.data = cstr, .len = sizeof(cstr) - 1})
+#define ToSTR(cbuffer)((str){.data = cbuffer, .len = strlen(cbuffer)})

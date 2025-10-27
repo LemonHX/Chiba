@@ -41,16 +41,16 @@ def generate_struct_macro(n):
     macro = f"""#define DECLARE_CHIBA_STRUCT_{n}(struct_name, {fields_param})"""
     macro += f"""  \\
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \\
-  typedef struct CHIBA_##struct_name##_struct {{                                \\
-    const CHIBA_METAINFO *metainfo;                                            \\
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {{                                \\
+    const C8NS(ReflMetaInfo) *metainfo;                                            \\
     {expand_fields}                \\
   }} CHIBA_##struct_name;                                                       \\
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {{        \\
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {{        \\
       {expand_metadata}}};              \\
   DECLARE_CHIBA_METADATA(struct_name);                                         \\
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \\
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \\
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) {{ \\
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \\
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \\
   }} \\
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 """
@@ -94,7 +94,7 @@ def generate_full_file(max_count):
  .name = #field_name, .type = #field_type, .size = sizeof(field_type)},
 
 #define DECLARE_CHIBA_METADATA(struct_name)                                    \\
-  const CHIBA_METAINFO CHIBA_##struct_name##_METAINFO = {                      \\
+  const C8NS(ReflMetaInfo) CHIBA_##struct_name##_METAINFO = {                      \\
       .fields = CHIBA_##struct_name##_FIELD_METAINFO,                          \\
       .field_count = countof(CHIBA_##struct_name##_FIELD_METAINFO),            \\
   };

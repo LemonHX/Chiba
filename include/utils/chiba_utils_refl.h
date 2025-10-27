@@ -5,46 +5,46 @@
 #include "chiba_utils_visibility.h"
 
 // used for reflection metadata
-typedef struct CHIBA_FIELD_METAINFO {
+typedef struct C8NS(ReflFieldMetaInfo) {
   const i8 *name;
   const i8 *type;
   const u32 size;
   const u64 offset;
-} CHIBA_FIELD_METAINFO;
+} C8NS(ReflFieldMetaInfo);
 
 // used for reflection metadata
-typedef struct CHIBA_METAINFO {
-  const CHIBA_FIELD_METAINFO *fields;
+typedef struct C8NS(ReflMetaInfo) {
+  const C8NS(ReflFieldMetaInfo) *fields;
   const u32 field_count;
-  const VHashTable *field_name_to_index;
-} CHIBA_METAINFO;
+  const VHashTable *dyn_vtable;
+} C8NS(ReflMetaInfo);
 
-typedef struct CHIBA_METAINFO_HEADER {
-  const CHIBA_METAINFO *metainfo;
-} CHIBA_METAINFO_HEADER;
+typedef struct __attribute__((aligned(8))) C8NS(AnyObject) {
+  const C8NS(ReflMetaInfo) *metainfo;
+} C8NS(AnyObject);
 
-typedef struct CHIBA_DYN_TY {
+typedef struct C8NS(AnyObjectType) {
   i8 *type_name;
   void *data;
-} CHIBA_DYN_TY;
+} C8NS(AnyObjectType);
 
-PUBLIC CHIBA_DYN_TY CHIBA_dyn_get_field(CHIBA_METAINFO_HEADER *self, str s) {
+UTILS C8NS(AnyObjectType) CHIBA_dyn_get_field(C8NS(AnyObject) *self, str s) {
   for (u64 i = 0; i < self->metainfo->field_count; i++) {
     if (str_equals(
             s, (str){.data = (i8 *)self->metainfo->fields[i].name,
                      .len = strlen((i8 *)self->metainfo->fields[i].name)})) {
       u64 offset = self->metainfo->fields[i].offset;
-      return (CHIBA_DYN_TY){
+      return (C8NS(AnyObjectType)){
           .type_name = (i8 *)self->metainfo->fields[i].type,
           .data = (void *)((u8 *)self + offset),
       };
     }
   }
-  return (CHIBA_DYN_TY){.type_name = NULL, .data = NULL};
+  return (C8NS(AnyObjectType)){.type_name = NULL, .data = NULL};
 }
 
-PUBLIC bool CHIBA_dyn_set_field(CHIBA_METAINFO_HEADER *self, str s,
-                                CHIBA_DYN_TY val) {
+UTILS bool CHIBA_dyn_set_field(C8NS(AnyObject) *self, str s,
+                                C8NS(AnyObjectType) val) {
   for (u64 i = 0; i < self->metainfo->field_count; i++) {
     if (str_equals(
             s, (str){.data = (i8 *)self->metainfo->fields[i].name,

@@ -20,7 +20,7 @@ static const u8 DEC_DIGITS_LUT[200] = {
     '9', '0', '9', '1', '9', '2', '9', '3', '9', '4', '9', '5', '9', '6', '9',
     '7', '9', '8', '9', '9'};
 
-static const u64 MAX_STR_LEN = 20;
+PRIVATE const u64 MAX_STR_LEN = 20;
 
 UTILS cstr itoa(i64 value, i8 *buffer) {
   const bool is_nonnegative = value >= 0;

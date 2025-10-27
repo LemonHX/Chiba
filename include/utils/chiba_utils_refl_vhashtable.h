@@ -28,7 +28,7 @@ typedef struct {
 
 UTILS u64 vhashtable_hash_str(str s) { return _internal_str_hash(s); }
 
-UTILS str str_copy(str s) {
+UTILS str __str_copy(str s) {
   i8 *new_data = (i8 *)malloc(s.len);
   if (new_data == NULL) {
     return (str){.data = NULL, .len = 0};
@@ -150,7 +150,7 @@ UTILS void vhashtable_insert(VHashTable *table, str key, API_FUNC_PTR value) {
   }
 
   table->entries[index].hash = hash;
-  table->entries[index].key = str_copy(key);
+  table->entries[index].key = __str_copy(key);
   table->entries[index].value = value;
   table->entries[index].state = VHASHTABLE_OCCUPIED;
   if (table->entries[index].key.data == NULL) {

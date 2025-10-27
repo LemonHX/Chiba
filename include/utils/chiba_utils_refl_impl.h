@@ -5,135 +5,135 @@
 
 #define DECLARE_CHIBA_STRUCT_1(struct_name, field1)  \
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \
-  typedef struct CHIBA_##struct_name##_struct {                                \
-    const CHIBA_METAINFO *metainfo;                                            \
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {                                \
+    const C8NS(ReflMetaInfo) *metainfo;                                            \
     EXPAND_FIELD field1                \
   } CHIBA_##struct_name;                                                       \
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 
 
 #define DECLARE_CHIBA_STRUCT_2(struct_name, field1, field2)  \
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \
-  typedef struct CHIBA_##struct_name##_struct {                                \
-    const CHIBA_METAINFO *metainfo;                                            \
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {                                \
+    const C8NS(ReflMetaInfo) *metainfo;                                            \
     EXPAND_FIELD field1 EXPAND_FIELD field2                \
   } CHIBA_##struct_name;                                                       \
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 
 
 #define DECLARE_CHIBA_STRUCT_3(struct_name, field1, field2, field3)  \
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \
-  typedef struct CHIBA_##struct_name##_struct {                                \
-    const CHIBA_METAINFO *metainfo;                                            \
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {                                \
+    const C8NS(ReflMetaInfo) *metainfo;                                            \
     EXPAND_FIELD field1 EXPAND_FIELD field2 EXPAND_FIELD field3                \
   } CHIBA_##struct_name;                                                       \
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 
 
 #define DECLARE_CHIBA_STRUCT_4(struct_name, field1, field2, field3, field4)  \
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \
-  typedef struct CHIBA_##struct_name##_struct {                                \
-    const CHIBA_METAINFO *metainfo;                                            \
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {                                \
+    const C8NS(ReflMetaInfo) *metainfo;                                            \
     EXPAND_FIELD field1 EXPAND_FIELD field2 EXPAND_FIELD field3 EXPAND_FIELD field4                \
   } CHIBA_##struct_name;                                                       \
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 
 
 #define DECLARE_CHIBA_STRUCT_5(struct_name, field1, field2, field3, field4, field5)  \
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \
-  typedef struct CHIBA_##struct_name##_struct {                                \
-    const CHIBA_METAINFO *metainfo;                                            \
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {                                \
+    const C8NS(ReflMetaInfo) *metainfo;                                            \
     EXPAND_FIELD field1 EXPAND_FIELD field2 EXPAND_FIELD field3 EXPAND_FIELD field4 EXPAND_FIELD field5                \
   } CHIBA_##struct_name;                                                       \
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field5)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 
 
 #define DECLARE_CHIBA_STRUCT_6(struct_name, field1, field2, field3, field4, field5, field6)  \
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \
-  typedef struct CHIBA_##struct_name##_struct {                                \
-    const CHIBA_METAINFO *metainfo;                                            \
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {                                \
+    const C8NS(ReflMetaInfo) *metainfo;                                            \
     EXPAND_FIELD field1 EXPAND_FIELD field2 EXPAND_FIELD field3 EXPAND_FIELD field4 EXPAND_FIELD field5 EXPAND_FIELD field6                \
   } CHIBA_##struct_name;                                                       \
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field5) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field6)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 
 
 #define DECLARE_CHIBA_STRUCT_7(struct_name, field1, field2, field3, field4, field5, field6, field7)  \
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \
-  typedef struct CHIBA_##struct_name##_struct {                                \
-    const CHIBA_METAINFO *metainfo;                                            \
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {                                \
+    const C8NS(ReflMetaInfo) *metainfo;                                            \
     EXPAND_FIELD field1 EXPAND_FIELD field2 EXPAND_FIELD field3 EXPAND_FIELD field4 EXPAND_FIELD field5 EXPAND_FIELD field6 EXPAND_FIELD field7                \
   } CHIBA_##struct_name;                                                       \
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field5) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field6) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field7)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 
 
 #define DECLARE_CHIBA_STRUCT_8(struct_name, field1, field2, field3, field4, field5, field6, field7, field8)  \
   DECLARE_CHIBA_STRUCT_FORWARD(struct_name);                                   \
-  typedef struct CHIBA_##struct_name##_struct {                                \
-    const CHIBA_METAINFO *metainfo;                                            \
+  typedef struct __attribute__((aligned(8))) CHIBA_##struct_name##_struct {                                \
+    const C8NS(ReflMetaInfo) *metainfo;                                            \
     EXPAND_FIELD field1 EXPAND_FIELD field2 EXPAND_FIELD field3 EXPAND_FIELD field4 EXPAND_FIELD field5 EXPAND_FIELD field6 EXPAND_FIELD field7 EXPAND_FIELD field8                \
   } CHIBA_##struct_name;                                                       \
-  const CHIBA_FIELD_METAINFO CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
+  const C8NS(ReflFieldMetaInfo) CHIBA_##struct_name##_FIELD_METAINFO[] = {        \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field1) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field2) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field3) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field4) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field5) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field6) \
       EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field7) EXPAND_FIELD_METADATA_WITH_OFFSET(struct CHIBA_##struct_name##_struct, field8)};              \
   DECLARE_CHIBA_METADATA(struct_name);                                         \
-  PUBLIC static VHashTable *CHIBA_##struct_name##_field_name_to_index; \
+  PRIVATE VHashTable *CHIBA_##struct_name##_dyn_vtable; \
   BEFORE_START void init_CHIBA_##struct_name##_refl(void) { \
-  CHIBA_##struct_name##_field_name_to_index = vhashtable_create(); \
+  CHIBA_##struct_name##_dyn_vtable = vhashtable_create(); \
   } \
   DECLARE_CHIBA_CONSTRUCTORS(struct_name)
 
@@ -150,7 +150,7 @@
  .name = #field_name, .type = #field_type, .size = sizeof(field_type)},
 
 #define DECLARE_CHIBA_METADATA(struct_name)                                    \
-  const CHIBA_METAINFO CHIBA_##struct_name##_METAINFO = {                      \
+  const C8NS(ReflMetaInfo) CHIBA_##struct_name##_METAINFO = {                      \
       .fields = CHIBA_##struct_name##_FIELD_METAINFO,                          \
       .field_count = countof(CHIBA_##struct_name##_FIELD_METAINFO),            \
   };
