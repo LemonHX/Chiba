@@ -34,7 +34,8 @@ typedef void *anyptr;
 typedef C8STRUCT str {
   cstr data;
   u64 len;
-} str;
+}
+str;
 
 #define STR(cstr) ((str){.data = cstr, .len = sizeof(cstr) - 1})
-#define PTR2STR(cbuffer)((str){.data = cbuffer, .len = strlen(cbuffer)})
+#define PTR2STR(cbuffer) ((str){.data = cbuffer, .len = strlen(cbuffer)})

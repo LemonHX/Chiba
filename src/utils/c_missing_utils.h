@@ -22,7 +22,6 @@ BEFORE_START void abort_if_be(void) {
   }
 }
 
-
 #ifndef offsetof
 #define offsetof(type, field) ((size_t)&((type *)0)->field)
 #endif
@@ -31,7 +30,6 @@ BEFORE_START void abort_if_be(void) {
 #define endof(x) ((x) + countof(x))
 #define INF (1.0 / 0.0)
 #define NEG_INF (-1.0 / 0.0)
-
 
 #define max_of_type(type)                                                      \
   PRIVATE inline type max_##type(type a, type b) { return (a > b) ? a : b; }
@@ -329,7 +327,6 @@ UTILS cstr ptrtoa(void *ptr, i8 *buffer) {
   sprintf((char *)buffer, "%p", ptr);
   return buffer;
 }
-
 
 UTILS bool str_equals(str a, str b) {
   if (a.len != b.len)
