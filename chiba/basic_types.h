@@ -8,16 +8,14 @@
 #endif
 
 #ifdef __LITTLE_ENDIAN__
-#define CHIBA_NANBOX_LITTLE_ENDIAN
+#pragma message("INFO: Little endian architecture detected")
 #endif
 
-#ifndef __cplusplus
 #define true 1
 #define false 0
-typedef unsigned char bool;
-#endif
-
+#define bool u8
 typedef unsigned char u8;
+typedef u8 bool;
 typedef unsigned short u16;
 typedef unsigned int u32;
 typedef unsigned long long u48;
@@ -123,3 +121,7 @@ UTILS anyptr CHIBA_nanbox_to_ptr(f64 f64) {
   }
   return NULL;
 }
+
+// Forward declaration of entry function that will be implemented in the main
+// coroutine code
+NOINLINE PRIVATE void CHIBA_co_entry(anyptr arg) __attribute__((noreturn));

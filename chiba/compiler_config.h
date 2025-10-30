@@ -29,3 +29,16 @@
 
 // please change if you are using risv64 and using 39 bits virtual address space
 #define PTR_BIT 48
+
+// Passing the entry function into assembly requires casting the function
+// pointer to an object pointer, which is forbidden in the ISO C spec but
+// allowed in posix. Ignore the warning attributed to this  requirement when
+// the -pedantic compiler flag is provide.
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#endif
+
+// Minimum stack size for coroutines (16 KB)
+#define CHIBA_CO_MINSTACKSIZE 16384
+// #define CHIBA_CO_NOASM // Disable assembly implementations

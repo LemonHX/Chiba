@@ -61,6 +61,9 @@
 #define PUBLIC __attribute__((visibility("default")))
 #endif
 #define PRIVATE static
+#define THREAD_LOCAL __thread
+#define NOINLINE __attribute__((noinline))
+#define NAKED __attribute__((naked))
 
 #define UTILS static inline
 
