@@ -42,3 +42,5 @@
 // Minimum stack size for coroutines (16 KB)
 #define CHIBA_CO_MINSTACKSIZE 16384
 // #define CHIBA_CO_NOASM // Disable assembly implementations
+
+#define COROUTINE_SINGLECORE_IMPL // enable single-core coroutine implementation
