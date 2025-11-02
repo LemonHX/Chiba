@@ -47,6 +47,9 @@ struct CHIBA_co {
   struct CHIBA_co_desc desc;
 #if defined(CHIBA_CO_STACKJMP)
   jmp_buf buf;
+#if defined(CHIBA_CO_UCONTEXT)
+  struct CHIBA_co_uctx uctx;
+#endif
 #elif defined(CHIBA_CO_ASM)
   struct CHIBA_co_asmctx ctx;
 #elif defined(CHIBA_CO_WASM)
@@ -119,7 +122,7 @@ PRIVATE void CHIBA_co_switch1(struct CHIBA_co *from, struct CHIBA_co *to,
     }
   } else {
     if (!_setjmp(from->buf)) {
-      CHIBA_co_stackjmp(stack, stack_size, CHIBA_co_entry);
+      CHIBA_co_stackjmp(&from->uctx, stack, stack_size, CHIBA_co_entry);
     }
   }
 #elif defined(CHIBA_CO_ASM)
@@ -214,9 +217,5 @@ PUBLIC struct CHIBA_co *CHIBA_co_current(void) {
 // Returns a string that indicates which coroutine method is being used
 PUBLIC cstr CHIBA_co_method(anyptr caps) {
   (void)caps;
-  return CHIBA_CO_METHOD
-#ifdef CHIBA_CO_STACKJMP
-      ",stackjmp"
-#endif
-      ;
+  return CHIBA_CO_METHOD;
 }

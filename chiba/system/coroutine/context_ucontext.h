@@ -8,10 +8,10 @@
 #if !defined(CHIBA_CO_READY)
 #define CHIBA_CO_UCONTEXT
 #define CHIBA_CO_READY
-#define CHIBA_CO_METHOD "ucontext"
 #ifndef CHIBA_CO_STACKJMP
 #define CHIBA_CO_STACKJMP
 #endif
+#define CHIBA_CO_METHOD "ucontext, stackjmp"
 
 #if defined(__FreeBSD__) || defined(__APPLE__)
 #ifdef __clang__
@@ -21,8 +21,11 @@
 #endif
 #include <ucontext.h>
 
-PRIVATE THREAD_LOCAL ucontext_t CHIBA_co_stackjmp_ucallee;
-PRIVATE THREAD_LOCAL i32 CHIBA_co_stackjmp_ucallee_gotten = 0;
+// Ucontext context structure - stores per-coroutine state
+struct CHIBA_co_uctx {
+  ucontext_t ucallee;
+  i32 initialized;
+};
 
 #if defined(__APPLE__) && defined(__aarch64__) &&                              \
     !defined(CHIBA_CO_NOSTACKADJUST)
@@ -53,23 +56,30 @@ PRIVATE void CHIBA_co_adjust_ucontext_stack(ucontext_t *ucp) {
 #define CHIBA_co_adjust_ucontext_stack(ucp)
 #endif
 
+// Initialize a ucontext context structure
+PRIVATE void CHIBA_co_uctx_make(struct CHIBA_co_uctx *ctx, anyptr stack_base,
+                                u64 stack_size, void (*entry)(anyptr arg)) {
+  if (!ctx->initialized) {
+    ctx->initialized = 1;
+    getcontext(&ctx->ucallee);
+  }
+  ctx->ucallee.uc_stack.ss_sp = stack_base;
+  ctx->ucallee.uc_stack.ss_size = stack_size;
+  CHIBA_co_adjust_ucontext_stack(&ctx->ucallee);
+  makecontext(&ctx->ucallee, (void (*)(void))entry, 0);
+}
+
 // Ucontext always uses stackjmp with setjmp/longjmp, instead of swapcontext
 // because it's much faster.
-NOINLINE PRIVATE void CHIBA_co_stackjmp(anyptr stack, u64 stack_size,
+NOINLINE PRIVATE void CHIBA_co_stackjmp(struct CHIBA_co_uctx *ctx, anyptr stack,
+                                        u64 stack_size,
                                         void (*entry)(anyptr arg))
     __attribute__((noreturn));
 
-PRIVATE void CHIBA_co_stackjmp(anyptr stack, u64 stack_size,
-                               void (*entry)(anyptr arg)) {
-  if (!CHIBA_co_stackjmp_ucallee_gotten) {
-    CHIBA_co_stackjmp_ucallee_gotten = 1;
-    getcontext(&CHIBA_co_stackjmp_ucallee);
-  }
-  CHIBA_co_stackjmp_ucallee.uc_stack.ss_sp = stack;
-  CHIBA_co_stackjmp_ucallee.uc_stack.ss_size = stack_size;
-  CHIBA_co_adjust_ucontext_stack(&CHIBA_co_stackjmp_ucallee);
-  makecontext(&CHIBA_co_stackjmp_ucallee, (void (*)(void))entry, 0);
-  setcontext(&CHIBA_co_stackjmp_ucallee);
+PRIVATE void CHIBA_co_stackjmp(struct CHIBA_co_uctx *ctx, anyptr stack,
+                               u64 stack_size, void (*entry)(anyptr arg)) {
+  CHIBA_co_uctx_make(ctx, stack, stack_size, entry);
+  setcontext(&ctx->ucallee);
   _Exit(0); // Should never reach here
 }
 
