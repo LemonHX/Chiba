@@ -1,0 +1,6 @@
+[submodule "third_party/wepoll"]
+	path = third_party/wepoll
+	url = https://github.com/piscisaureus/wepoll
+[submodule "third_party/pthread-win32"]
+	path = third_party/pthread-win32
+	url = https://github.com/GerHobbelt/pthread-win32
