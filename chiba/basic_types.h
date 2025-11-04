@@ -36,7 +36,3 @@ typedef double f64;
 // need box to pass
 typedef long long i64;
 typedef unsigned long long u64;
-
-// Forward declaration of entry function that will be implemented in the main
-// coroutine code
-NOINLINE PRIVATE void CHIBA_co_entry(anyptr arg) __attribute__((noreturn));
