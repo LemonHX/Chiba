@@ -33,6 +33,11 @@
 #include <limits.h>
 #include <unistd.h>
 #endif
+#if defined(_WIN32)
+#include "../third_party/pthread-win32/pthread.h"
+#endif
+#include <stdatomic.h>
+#define CHIBA_IOCPU_WORKER_POOLTHREAD_NAME CHIBA_IOCPU_POOL
 
 // arg
 #include <stdarg.h>
@@ -69,3 +74,37 @@
 
 #define BEFORE_START __attribute__((constructor)) static
 #define AFTER_END __attribute__((destructor)) static
+
+// internal memory allocation functions
+#define DEFER(fn) __attribute__((cleanup(fn)))
+
+PRIVATE void *CHIBA_INTERNAL_malloc_func = (void *)malloc;
+PRIVATE void *CHIBA_INTERNAL_aligned_alloc_func = (void *)aligned_alloc;
+PRIVATE void *CHIBA_INTERNAL_realloc_func = (void *)realloc;
+PRIVATE void *CHIBA_INTERNAL_free_func = (void *)free;
+
+UTILS void CHIBA_INTERNAL_set_alloc_funcs(
+    void *(*malloc_func)(size_t), void *(*aligned_alloc_func)(size_t, size_t),
+    void *(*realloc_func)(void *, size_t), void (*free_func)(void *)) {
+  CHIBA_INTERNAL_malloc_func = (void *)malloc_func;
+  CHIBA_INTERNAL_aligned_alloc_func = (void *)aligned_alloc_func;
+  CHIBA_INTERNAL_realloc_func = (void *)realloc_func;
+  CHIBA_INTERNAL_free_func = (void *)free_func;
+}
+
+UTILS void *CHIBA_INTERNAL_malloc(size_t size) {
+  return ((void *(*)(size_t))CHIBA_INTERNAL_malloc_func)(size);
+}
+
+UTILS void *CHIBA_INTERNAL_malloc_aligned(size_t alignment, size_t size) {
+  return ((void *(*)(size_t, size_t))CHIBA_INTERNAL_aligned_alloc_func)(
+      alignment, size);
+}
+
+UTILS void *CHIBA_INTERNAL_realloc(void *ptr, size_t size) {
+  return ((void *(*)(void *, size_t))CHIBA_INTERNAL_realloc_func)(ptr, size);
+}
+
+UTILS void CHIBA_INTERNAL_free(void *ptr) {
+  ((void (*)(void *))CHIBA_INTERNAL_free_func)(ptr);
+}
