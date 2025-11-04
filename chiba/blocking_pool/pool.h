@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../basic_types.h"
+#include "../basic_memory.h"
 
 typedef struct chiba_iocpu_workerpool *threadpool;
 
@@ -22,7 +22,7 @@ typedef struct chiba_iocpu_workerpool *threadpool;
  * @return threadpool    created threadpool on success,
  *                       NULL on error
  */
-threadpool chiba_iocpu_workerpoolinit(i32 num_threads);
+PUBLIC threadpool chiba_iocpu_workerpoolinit(i32 num_threads);
 
 /**
  * @brief Add work to the job queue
@@ -51,8 +51,9 @@ threadpool chiba_iocpu_workerpoolinit(i32 num_threads);
  * @param  arg_p         pointer to an argument
  * @return 0 on success, -1 otherwise.
  */
-i32 chiba_iocpu_workerpooladd_work(threadpool, void (*function_p)(void *),
-                                   void *arg_p);
+PUBLIC i32 chiba_iocpu_workerpooladd_work(threadpool,
+                                          void (*function_p)(void *),
+                                          void *arg_p);
 
 /**
  * @brief Wait for all queued jobs to finish
@@ -81,7 +82,7 @@ i32 chiba_iocpu_workerpooladd_work(threadpool, void (*function_p)(void *),
  * @param threadpool     the threadpool to wait for
  * @return nothing
  */
-void chiba_iocpu_workerpoolwait(threadpool);
+PUBLIC void chiba_iocpu_workerpoolwait(threadpool);
 
 /**
  * @brief Pauses all threads immediately
@@ -104,7 +105,7 @@ void chiba_iocpu_workerpoolwait(threadpool);
  * @param threadpool    the threadpool where the threads should be paused
  * @return nothing
  */
-void chiba_iocpu_workerpoolpause(threadpool);
+PUBLIC void chiba_iocpu_workerpoolpause(threadpool);
 
 /**
  * @brief Unpauses all threads if they are paused
@@ -119,7 +120,7 @@ void chiba_iocpu_workerpoolpause(threadpool);
  * @param threadpool     the threadpool where the threads should be unpaused
  * @return nothing
  */
-void chiba_iocpu_workerpoolresume(threadpool);
+PUBLIC void chiba_iocpu_workerpoolresume(threadpool);
 
 /**
  * @brief Destroy the threadpool
@@ -140,7 +141,7 @@ void chiba_iocpu_workerpoolresume(threadpool);
  * @param threadpool     the threadpool to destroy
  * @return nothing
  */
-void chiba_iocpu_workerpooldestroy(threadpool);
+PUBLIC void chiba_iocpu_workerpooldestroy(threadpool);
 
 /**
  * @brief Show currently working threads
@@ -161,4 +162,4 @@ void chiba_iocpu_workerpooldestroy(threadpool);
  * @param threadpool     the threadpool of interest
  * @return integer       number of threads working
  */
-i32 chiba_iocpu_workerpoolnum_threads_working(threadpool);
+PUBLIC i32 chiba_iocpu_workerpoolnum_threads_working(threadpool);

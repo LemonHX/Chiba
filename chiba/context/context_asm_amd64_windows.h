@@ -3,7 +3,7 @@
 // (c) 2024 Joshua J Baker.
 
 #pragma once
-#include "../../basic_types.h"
+#include "../basic_types.h"
 
 #if (defined(__x86_64__) || defined(_M_X64)) && !defined(CHIBA_CO_NOASM) &&    \
     defined(_WIN32)

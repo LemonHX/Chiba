@@ -3,8 +3,8 @@
 // IMPLEMENTATION
 //////////////////////////////////////////////////////////////////////////////////
 
-#include "context.h"
-#include "coroutine_intf.h"
+#include "../context/context.h"
+#include "coroutine.h"
 
 // Exit function for coroutines
 NOINLINE PRIVATE void CHIBA_co_exit(void) __attribute__((noreturn));

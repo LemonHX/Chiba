@@ -3,7 +3,7 @@
 // Copyright (c) 2024 Joshua J Baker.
 
 #pragma once
-#include "../../basic_types.h"
+#include "../basic_types.h"
 
 #if defined(__riscv) && !defined(CHIBA_CO_NOASM) && (__riscv_xlen == 64)
 #define CHIBA_CO_ASM

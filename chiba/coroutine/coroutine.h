@@ -4,7 +4,7 @@
 // Copyright (c) 2024 Joshua J Baker.
 
 #pragma once
-#include "../../basic_types.h"
+#include "../basic_types.h"
 
 // Coroutine descriptor for starting new coroutines
 struct CHIBA_co_desc {

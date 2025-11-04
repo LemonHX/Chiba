@@ -1,9 +1,7 @@
 // Ucontext-based coroutine context switching implementation
-// Adapted from llco (https://github.com/tidwall/llco)
-// Copyright (c) 2024 Joshua J Baker.
 
 #pragma once
-#include "../../basic_types.h"
+#include "../basic_types.h"
 
 #if !defined(CHIBA_CO_READY)
 #define CHIBA_CO_UCONTEXT

@@ -4,5 +4,8 @@
     "**/*.h": "c",
     "*.h": "c"
   },
+  "clangd.arguments": [
+    "--query-driver=/usr/bin/clang*"
+  ],
   "editor.formatOnSave": true
 }

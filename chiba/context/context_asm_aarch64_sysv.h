@@ -3,7 +3,7 @@
 // Copyright (c) 2024 Joshua J Baker.
 
 #pragma once
-#include "../../basic_types.h"
+#include "../basic_types.h"
 
 #if defined(__aarch64__) && !defined(CHIBA_CO_NOASM) && !defined(__WIN32)
 #define CHIBA_CO_ASM

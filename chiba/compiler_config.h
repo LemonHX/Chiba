@@ -44,3 +44,8 @@
 // #define CHIBA_CO_NOASM // Disable assembly implementations
 
 #define COROUTINE_SINGLECORE_IMPL // enable single-core coroutine implementation
+
+// binary or lib
+
+#define CHIBA_BINARY
+// #define CHIBA_LIB

@@ -4,7 +4,7 @@
 // Copyright (c) 2024 Joshua J Baker.
 
 #pragma once
-#include "../../basic_types.h"
+#include "../basic_types.h"
 
 // Check for CosmopolillanC which has issues with asm code
 #if defined(__COSMOCC__) && !defined(CHIBA_CO_NOASM)

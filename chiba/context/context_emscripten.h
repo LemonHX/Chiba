@@ -1,11 +1,11 @@
 // Emscripten/WebAssembly coroutine context switching implementation
-// Adapted from llco (https://github.com/tidwall/llco)
-// Copyright (c) 2024 Joshua J Baker.
 
 #pragma once
-#include "../../basic_types.h"
+#include "../basic_types.h"
 
 #if defined(__EMSCRIPTEN__) && !defined(CHIBA_CO_READY)
+#pragma message(                                                               \
+    "INFO: Using Emscripten fibers for coroutine context switching, only support single thread")
 #define CHIBA_CO_WASM
 #define CHIBA_CO_READY
 #define CHIBA_CO_METHOD "fibers,emscripten"

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "pool_intf.h"
+#include "pool.h"
 
 #define err(str) fprintf(stderr, str)
 
@@ -85,8 +85,9 @@ struct chiba_iocpu_workerpool *chiba_iocpu_workerpoolinit(i32 num_threads) {
 
   /* Make new thread pool */
   chiba_iocpu_workerpool *chiba_iocpu_workerpoolp;
-  chiba_iocpu_workerpoolp = (struct chiba_iocpu_workerpool *)malloc(
-      sizeof(struct chiba_iocpu_workerpool));
+  chiba_iocpu_workerpoolp =
+      (struct chiba_iocpu_workerpool *)CHIBA_INTERNAL_malloc(
+          sizeof(struct chiba_iocpu_workerpool));
   if (chiba_iocpu_workerpoolp == NULL) {
     err("chiba_iocpu_workerpoolinit(): Could not allocate memory for thread "
         "pool\n");
@@ -99,18 +100,18 @@ struct chiba_iocpu_workerpool *chiba_iocpu_workerpoolinit(i32 num_threads) {
   if (jobqueue_init(&chiba_iocpu_workerpoolp->jobqueue) == -1) {
     err("chiba_iocpu_workerpoolinit(): Could not allocate memory for job "
         "queue\n");
-    free(chiba_iocpu_workerpoolp);
+    CHIBA_INTERNAL_free(chiba_iocpu_workerpoolp);
     return NULL;
   }
 
   /* Make threads in pool */
-  chiba_iocpu_workerpoolp->threads =
-      (struct thread **)malloc(num_threads * sizeof(struct thread *));
+  chiba_iocpu_workerpoolp->threads = (struct thread **)CHIBA_INTERNAL_malloc(
+      num_threads * sizeof(struct thread *));
   if (chiba_iocpu_workerpoolp->threads == NULL) {
     err("chiba_iocpu_workerpoolinit(): Could not allocate memory for "
         "threads\n");
     jobqueue_destroy(&chiba_iocpu_workerpoolp->jobqueue);
-    free(chiba_iocpu_workerpoolp);
+    CHIBA_INTERNAL_free(chiba_iocpu_workerpoolp);
     return NULL;
   }
 
@@ -140,7 +141,7 @@ i32 chiba_iocpu_workerpooladd_work(
     void *arg_p) {
   job *newjob;
 
-  newjob = (struct job *)malloc(sizeof(struct job));
+  newjob = (struct job *)CHIBA_INTERNAL_malloc(sizeof(struct job));
   if (newjob == NULL) {
     err("chiba_iocpu_workerpooladd_work(): Could not allocate memory for new "
         "job\n");
@@ -205,8 +206,8 @@ void chiba_iocpu_workerpooldestroy(
   for (n = 0; n < threads_total; n++) {
     thread_destroy(chiba_iocpu_workerpoolp->threads[n]);
   }
-  free(chiba_iocpu_workerpoolp->threads);
-  free(chiba_iocpu_workerpoolp);
+  CHIBA_INTERNAL_free(chiba_iocpu_workerpoolp->threads);
+  CHIBA_INTERNAL_free(chiba_iocpu_workerpoolp);
 }
 
 /* Pause all threads in threadpool */
@@ -239,7 +240,7 @@ i32 chiba_iocpu_workerpoolnum_threads_working(
 PRIVATE i32 thread_init(chiba_iocpu_workerpool *chiba_iocpu_workerpoolp,
                         struct thread **thread_p, i32 id) {
 
-  *thread_p = (struct thread *)malloc(sizeof(struct thread));
+  *thread_p = (struct thread *)CHIBA_INTERNAL_malloc(sizeof(struct thread));
   if (*thread_p == NULL) {
     err("thread_init(): Could not allocate memory for thread\n");
     return -1;
@@ -264,24 +265,6 @@ PRIVATE i32 thread_init(chiba_iocpu_workerpool *chiba_iocpu_workerpoolp,
  * @return nothing
  */
 PRIVATE void *thread_do(struct thread *thread_p) {
-
-  /* Set thread name for profiling and debugging */
-  i8 thread_name[16] = {0};
-
-  snprintf(thread_name, 16, TOSTRING(CHIBA_IOCPU_WORKER_POOLTHREAD_NAME) "-%d",
-           thread_p->id);
-
-#if defined(__linux__)
-  /* Use prctl instead to prevent using _GNU_SOURCE flag and implicit
-   * declaration */
-  prctl(PR_SET_NAME, thread_name);
-#elif defined(__APPLE__) && defined(__MACH__)
-  pthread_setname_np(thread_name);
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
-  pthread_set_name_np(thread_p->pthread, thread_name);
-#else
-  err("thread_do(): pthread_setname_np is not supported on this system");
-#endif
 
   /* Assure all threads have been created before starting serving */
   chiba_iocpu_workerpool *chiba_iocpu_workerpoolp =
@@ -313,7 +296,7 @@ PRIVATE void *thread_do(struct thread *thread_p) {
         func_buff = job_p->function;
         arg_buff = job_p->arg;
         func_buff(arg_buff);
-        free(job_p);
+        CHIBA_INTERNAL_free(job_p);
       }
 
       pthread_mutex_lock(&chiba_iocpu_workerpoolp->thcount_lock);
@@ -332,7 +315,7 @@ PRIVATE void *thread_do(struct thread *thread_p) {
 }
 
 /* Frees a thread  */
-PRIVATE void thread_destroy(thread *thread_p) { free(thread_p); }
+PRIVATE void thread_destroy(thread *thread_p) { CHIBA_INTERNAL_free(thread_p); }
 
 /* ============================ JOB QUEUE =========================== */
 
@@ -342,7 +325,8 @@ PRIVATE i32 jobqueue_init(jobqueue *jobqueue_p) {
   jobqueue_p->front = NULL;
   jobqueue_p->rear = NULL;
 
-  jobqueue_p->has_jobs = (struct bsem *)malloc(sizeof(struct bsem));
+  jobqueue_p->has_jobs =
+      (struct bsem *)CHIBA_INTERNAL_malloc(sizeof(struct bsem));
   if (jobqueue_p->has_jobs == NULL) {
     return -1;
   }
@@ -357,7 +341,7 @@ PRIVATE i32 jobqueue_init(jobqueue *jobqueue_p) {
 PRIVATE void jobqueue_clear(jobqueue *jobqueue_p) {
 
   while (jobqueue_p->len) {
-    free(jobqueue_pull(jobqueue_p));
+    CHIBA_INTERNAL_free(jobqueue_pull(jobqueue_p));
   }
 
   jobqueue_p->front = NULL;
@@ -423,7 +407,7 @@ PRIVATE struct job *jobqueue_pull(jobqueue *jobqueue_p) {
 /* Free all queue resources back to the system */
 PRIVATE void jobqueue_destroy(jobqueue *jobqueue_p) {
   jobqueue_clear(jobqueue_p);
-  free(jobqueue_p->has_jobs);
+  CHIBA_INTERNAL_free(jobqueue_p->has_jobs);
 }
 
 /* ======================== SYNCHRONISATION ========================= */

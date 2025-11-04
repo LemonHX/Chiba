@@ -6,7 +6,7 @@
 // - Emscripten fibers for WebAssembly
 
 #pragma once
-#include "../../basic_types.h"
+#include "../basic_types.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Platform-specific context switching implementations
