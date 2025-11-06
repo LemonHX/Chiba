@@ -6,7 +6,7 @@ TEST_GROUP(array_queue);
 
 // Concurrent test structures
 typedef struct {
-  ArrayQueue *queue;
+  chiba_arrayqueue *queue;
   i64 thread_id;
   i64 iterations;
 } ThreadArgs;
@@ -19,7 +19,7 @@ void *producer_thread(void *arg) {
     i64 value = args->thread_id * 1000000 + i;
 
     // Keep trying until push succeeds
-    while (!array_queue_push(args->queue, (anyptr)value)) {
+    while (!chiba_arrayqueue_push(args->queue, (anyptr)value)) {
       // Backoff
       for (volatile int j = 0; j < 100; j++)
         ;
@@ -34,7 +34,7 @@ void *consumer_thread(void *arg) {
   i64 consumed = 0;
 
   while (consumed < args->iterations) {
-    anyptr value = array_queue_pop(args->queue);
+    anyptr value = chiba_arrayqueue_pop(args->queue);
     if (value != NULL) {
       consumed++;
     } else {
@@ -54,9 +54,9 @@ void *mixed_thread(void *arg) {
     // Alternate between push and pop
     if (i % 2 == 0) {
       i64 value = args->thread_id * 1000000 + i;
-      array_queue_push(args->queue, (anyptr)value);
+      chiba_arrayqueue_push(args->queue, (anyptr)value);
     } else {
-      array_queue_pop(args->queue);
+      chiba_arrayqueue_pop(args->queue);
     }
   }
 
@@ -68,7 +68,7 @@ void *stress_producer(void *arg) {
 
   for (i64 i = 0; i < args->iterations; i++) {
     i64 value = args->thread_id * 10000000 + i;
-    while (!array_queue_push(args->queue, (anyptr)value)) {
+    while (!chiba_arrayqueue_push(args->queue, (anyptr)value)) {
       // Tight loop - stress test
     }
   }
@@ -81,7 +81,7 @@ void *stress_consumer(void *arg) {
   i64 consumed = 0;
 
   while (consumed < args->iterations) {
-    anyptr value = array_queue_pop(args->queue);
+    anyptr value = chiba_arrayqueue_pop(args->queue);
     if (value != NULL) {
       consumed++;
     }
@@ -94,95 +94,97 @@ void *stress_consumer(void *arg) {
 TEST_CASE(create_destroy, array_queue, "Create and destroy queue", {
   DESC(create_destroy);
 
-  ArrayQueue *queue = array_queue_new(10);
+  chiba_arrayqueue *queue = chiba_arrayqueue_new(10);
   ASSERT_NOT_NULL(queue, "Queue should be created successfully");
-  ASSERT_EQ(10, array_queue_capacity(queue), "Queue capacity should be 10");
-  ASSERT_TRUE(array_queue_is_empty(queue), "New queue should be empty");
-  ASSERT_EQ(0, array_queue_len(queue), "New queue length should be 0");
+  ASSERT_EQ(10, chiba_arrayqueue_capacity(queue),
+            "Queue capacity should be 10");
+  ASSERT_TRUE(chiba_arrayqueue_is_empty(queue), "New queue should be empty");
+  ASSERT_EQ(0, chiba_arrayqueue_size(queue), "New queue length should be 0");
 
-  array_queue_destroy(queue);
+  chiba_arrayqueue_drop(queue);
   return 0;
 })
 
 TEST_CASE(single_push_pop, array_queue, "Single push and pop", {
   DESC(single_push_pop);
 
-  ArrayQueue *queue = array_queue_new(10);
+  chiba_arrayqueue *queue = chiba_arrayqueue_new(10);
   ASSERT_NOT_NULL(queue, "Queue should be created");
 
   anyptr value = (anyptr)0x1234;
-  ASSERT_TRUE(array_queue_push(queue, value), "Push should succeed");
-  ASSERT_EQ(1, array_queue_len(queue), "Queue length should be 1");
-  ASSERT_TRUE(!array_queue_is_empty(queue), "Queue should not be empty");
+  ASSERT_TRUE(chiba_arrayqueue_push(queue, value), "Push should succeed");
+  ASSERT_EQ(1, chiba_arrayqueue_size(queue), "Queue length should be 1");
+  ASSERT_TRUE(!chiba_arrayqueue_is_empty(queue), "Queue should not be empty");
 
-  anyptr popped = array_queue_pop(queue);
+  anyptr popped = chiba_arrayqueue_pop(queue);
   ASSERT_EQ((i64)value, (i64)popped, "Popped value should match pushed value");
-  ASSERT_TRUE(array_queue_is_empty(queue), "Queue should be empty after pop");
+  ASSERT_TRUE(chiba_arrayqueue_is_empty(queue),
+              "Queue should be empty after pop");
 
-  array_queue_destroy(queue);
+  chiba_arrayqueue_drop(queue);
   return 0;
 })
 
 TEST_CASE(multiple_push_pop, array_queue, "Multiple push and pop operations", {
   DESC(multiple_push_pop);
 
-  ArrayQueue *queue = array_queue_new(5);
+  chiba_arrayqueue *queue = chiba_arrayqueue_new(5);
   ASSERT_NOT_NULL(queue, "Queue should be created");
 
   // Push 5 elements
   for (i64 i = 1; i <= 5; i++) {
-    ASSERT_TRUE(array_queue_push(queue, (anyptr)i), "Push should succeed");
+    ASSERT_TRUE(chiba_arrayqueue_push(queue, (anyptr)i), "Push should succeed");
   }
 
-  ASSERT_EQ(5, array_queue_len(queue), "Queue should have 5 elements");
-  ASSERT_TRUE(array_queue_is_full(queue), "Queue should be full");
+  ASSERT_EQ(5, chiba_arrayqueue_size(queue), "Queue should have 5 elements");
+  ASSERT_TRUE(chiba_arrayqueue_is_full(queue), "Queue should be full");
 
   // Try to push to full queue
-  ASSERT_TRUE(!array_queue_push(queue, (anyptr)6),
+  ASSERT_TRUE(!chiba_arrayqueue_push(queue, (anyptr)6),
               "Push to full queue should fail");
 
   // Pop all elements
   for (i64 i = 1; i <= 5; i++) {
-    anyptr popped = array_queue_pop(queue);
+    anyptr popped = chiba_arrayqueue_pop(queue);
     ASSERT_EQ(i, (i64)popped, "Popped value should match pushed value");
   }
 
-  ASSERT_TRUE(array_queue_is_empty(queue), "Queue should be empty");
-  ASSERT_NULL(array_queue_pop(queue),
+  ASSERT_TRUE(chiba_arrayqueue_is_empty(queue), "Queue should be empty");
+  ASSERT_NULL(chiba_arrayqueue_pop(queue),
               "Pop from empty queue should return NULL");
 
-  array_queue_destroy(queue);
+  chiba_arrayqueue_drop(queue);
   return 0;
 })
 
 TEST_CASE(wrap_around, array_queue, "Test queue wrap around", {
   DESC(wrap_around);
 
-  ArrayQueue *queue = array_queue_new(3);
+  chiba_arrayqueue *queue = chiba_arrayqueue_new(3);
   ASSERT_NOT_NULL(queue, "Queue should be created");
 
   // Fill queue
   for (i64 i = 1; i <= 3; i++) {
-    ASSERT_TRUE(array_queue_push(queue, (anyptr)i), "Push should succeed");
+    ASSERT_TRUE(chiba_arrayqueue_push(queue, (anyptr)i), "Push should succeed");
   }
 
   // Pop 2 elements
-  ASSERT_EQ(1, (i64)array_queue_pop(queue), "First pop should return 1");
-  ASSERT_EQ(2, (i64)array_queue_pop(queue), "Second pop should return 2");
+  ASSERT_EQ(1, (i64)chiba_arrayqueue_pop(queue), "First pop should return 1");
+  ASSERT_EQ(2, (i64)chiba_arrayqueue_pop(queue), "Second pop should return 2");
 
   // Push 2 more (wraps around)
-  ASSERT_TRUE(array_queue_push(queue, (anyptr)4),
+  ASSERT_TRUE(chiba_arrayqueue_push(queue, (anyptr)4),
               "Push after wrap should succeed");
-  ASSERT_TRUE(array_queue_push(queue, (anyptr)5),
+  ASSERT_TRUE(chiba_arrayqueue_push(queue, (anyptr)5),
               "Push after wrap should succeed");
 
   // Pop remaining
-  ASSERT_EQ(3, (i64)array_queue_pop(queue), "Pop should return 3");
-  ASSERT_EQ(4, (i64)array_queue_pop(queue), "Pop should return 4");
-  ASSERT_EQ(5, (i64)array_queue_pop(queue), "Pop should return 5");
-  ASSERT_TRUE(array_queue_is_empty(queue), "Queue should be empty");
+  ASSERT_EQ(3, (i64)chiba_arrayqueue_pop(queue), "Pop should return 3");
+  ASSERT_EQ(4, (i64)chiba_arrayqueue_pop(queue), "Pop should return 4");
+  ASSERT_EQ(5, (i64)chiba_arrayqueue_pop(queue), "Pop should return 5");
+  ASSERT_TRUE(chiba_arrayqueue_is_empty(queue), "Queue should be empty");
 
-  array_queue_destroy(queue);
+  chiba_arrayqueue_drop(queue);
   return 0;
 })
 
@@ -190,7 +192,7 @@ TEST_CASE(concurrent_multiple_producers_consumers, array_queue,
           "Multiple producers and consumers", {
             DESC(concurrent_multiple_producers_consumers);
 
-            ArrayQueue *queue = array_queue_new(128);
+            chiba_arrayqueue *queue = chiba_arrayqueue_new(128);
             ASSERT_NOT_NULL(queue, "Queue should be created");
 
             const int num_producers = 4;
@@ -230,11 +232,11 @@ TEST_CASE(concurrent_multiple_producers_consumers, array_queue,
               pthread_join(consumers[i], NULL);
             }
 
-            ASSERT_TRUE(array_queue_is_empty(queue),
+            ASSERT_TRUE(chiba_arrayqueue_is_empty(queue),
                         "Queue should be empty after test");
             ASSERT_EQ(0, errors, "No errors should occur");
 
-            array_queue_destroy(queue);
+            chiba_arrayqueue_drop(queue);
             return 0;
           })
 
@@ -242,12 +244,12 @@ TEST_CASE(concurrent_mixed_operations, array_queue,
           "Mixed concurrent push and pop", {
             DESC(concurrent_mixed_operations);
 
-            ArrayQueue *queue = array_queue_new(256);
+            chiba_arrayqueue *queue = chiba_arrayqueue_new(256);
             ASSERT_NOT_NULL(queue, "Queue should be created");
 
             // Pre-fill queue with some elements
             for (i64 i = 0; i < 100; i++) {
-              array_queue_push(queue, (anyptr)i);
+              chiba_arrayqueue_push(queue, (anyptr)i);
             }
 
             const int num_threads = 8;
@@ -267,7 +269,7 @@ TEST_CASE(concurrent_mixed_operations, array_queue,
               pthread_join(threads[i], NULL);
             }
 
-            array_queue_destroy(queue);
+            chiba_arrayqueue_drop(queue);
             return 0;
           })
 
@@ -278,7 +280,7 @@ void *ordered_producer_thread(void *arg) {
   for (i64 j = 0; j < 10; j++) {
     // 值从1开始，避免0被当作NULL
     i64 value = args->thread_id * 10 + j + 1;
-    while (!array_queue_push(args->queue, (anyptr)value)) {
+    while (!chiba_arrayqueue_push(args->queue, (anyptr)value)) {
       // Keep trying
       for (volatile int k = 0; k < 10; k++)
         ;
@@ -297,7 +299,7 @@ int compare_i64(const void *a, const void *b) {
 
 // Shared data structure for multi-consumer test
 typedef struct {
-  ArrayQueue *queue;
+  chiba_arrayqueue *queue;
   i64 *shared_buffer;
   atomic_int *write_index;
   i64 items_to_consume;
@@ -308,7 +310,7 @@ void *multi_consumer_thread(void *arg) {
   i64 consumed = 0;
 
   while (consumed < args->items_to_consume) {
-    anyptr value = array_queue_pop(args->queue);
+    anyptr value = chiba_arrayqueue_pop(args->queue);
     if (value != NULL) {
       // Atomically get write position and increment
       int pos = atomic_fetch_add(args->write_index, 1);
@@ -330,7 +332,7 @@ void *multi_producer_thread(void *arg) {
   for (i64 i = 0; i < args->iterations; i++) {
     // Each producer pushes: thread_id*20 + i + 1
     i64 value = args->thread_id * 20 + i + 1;
-    while (!array_queue_push(args->queue, (anyptr)value)) {
+    while (!chiba_arrayqueue_push(args->queue, (anyptr)value)) {
       for (volatile int k = 0; k < 10; k++)
         ;
     }
@@ -343,7 +345,7 @@ TEST_CASE(four_producers_two_consumers, array_queue,
           "4 producers 2 consumers with shared buffer", {
             DESC(four_producers_two_consumers);
 
-            ArrayQueue *queue = array_queue_new(128);
+            chiba_arrayqueue *queue = chiba_arrayqueue_new(128);
             ASSERT_NOT_NULL(queue, "Queue should be created");
 
             const int num_producers = 4;
@@ -396,7 +398,8 @@ TEST_CASE(four_producers_two_consumers, array_queue,
                    atomic_load(&write_index));
             ASSERT_EQ(80, atomic_load(&write_index),
                       "Should have written exactly 80 items");
-            ASSERT_TRUE(array_queue_is_empty(queue), "Queue should be empty");
+            ASSERT_TRUE(chiba_arrayqueue_is_empty(queue),
+                        "Queue should be empty");
 
             // Sort the received values
             qsort(shared_buffer, total_items, sizeof(i64), compare_i64);
@@ -409,7 +412,7 @@ TEST_CASE(four_producers_two_consumers, array_queue,
             }
 
             CHIBA_INTERNAL_free(shared_buffer);
-            array_queue_destroy(queue);
+            chiba_arrayqueue_drop(queue);
             return 0;
           })
 
@@ -418,7 +421,7 @@ TEST_CASE(ten_producers_one_consumer_ordered, array_queue,
             DESC(ten_producers_one_consumer_ordered);
 
             // 队列容量设置大一些，避免生产者阻塞
-            ArrayQueue *queue = array_queue_new(200);
+            chiba_arrayqueue *queue = chiba_arrayqueue_new(200);
             ASSERT_NOT_NULL(queue, "Queue should be created");
 
             const int num_producers = 10;
@@ -440,12 +443,12 @@ TEST_CASE(ten_producers_one_consumer_ordered, array_queue,
             int count = 0;
 
             while (count < 100) {
-              anyptr value = array_queue_pop(queue);
+              anyptr value = chiba_arrayqueue_pop(queue);
               if (value != NULL) {
                 received[count++] = (i64)value;
                 if (count % 10 == 0) {
                   printf("Received %d items so far, queue len: %lld\n", count,
-                         array_queue_len(queue));
+                         chiba_arrayqueue_size(queue));
                 }
               } else {
                 // 如果队列暂时为空，稍微等待
@@ -456,7 +459,8 @@ TEST_CASE(ten_producers_one_consumer_ordered, array_queue,
 
             printf("Finished collecting. Count: %d\n", count);
             ASSERT_EQ(100, count, "Should receive exactly 100 items");
-            ASSERT_TRUE(array_queue_is_empty(queue), "Queue should be empty");
+            ASSERT_TRUE(chiba_arrayqueue_is_empty(queue),
+                        "Queue should be empty");
 
             // Sort the received values
             qsort(received, 100, sizeof(i64), compare_i64);
@@ -467,7 +471,7 @@ TEST_CASE(ten_producers_one_consumer_ordered, array_queue,
                         "After sorting, should have sequential values 1-100");
             }
 
-            array_queue_destroy(queue);
+            chiba_arrayqueue_drop(queue);
             return 0;
           })
 

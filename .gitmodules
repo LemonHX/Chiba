@@ -4,3 +4,9 @@
 [submodule "third_party/pthread-win32"]
 	path = third_party/pthread-win32
 	url = https://github.com/GerHobbelt/pthread-win32
+[submodule "third_party/boringssl"]
+	path = third_party/boringssl
+	url = https://boringssl.googlesource.com/boringssl
+[submodule "third_party/lsquic"]
+	path = third_party/lsquic
+	url = https://github.com/litespeedtech/lsquic

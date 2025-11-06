@@ -38,6 +38,7 @@
 #endif
 #include <stdatomic.h>
 #define CHIBA_IOCPU_POOL
+#include <stdalign.h>
 
 // arg
 #include <stdarg.h>
@@ -74,9 +75,3 @@
 
 #define BEFORE_START __attribute__((constructor)) static
 #define AFTER_END __attribute__((destructor)) static
-
-// 获取系统 CPU 核心数
-UTILS int threadpool_get_cpu_count(void);
-
-// 获取系统 NUMA 节点数
-UTILS int threadpool_get_numa_count(void);

@@ -54,53 +54,58 @@ PRIVATE bool simple_deque_empty(const SimpleDeque *deq) {
 TEST_CASE(owner_operations, dequeue, "Test owner push/pop operations", {
   DESC(owner_operations);
 
-  WorkStealingQueue *queue = wsqueue_new(2);
+  CHIBA_WSQueue *queue = chiba_wsqueue_new(2);
   ASSERT_NOT_NULL(queue, "Queue should be created");
-  ASSERT_EQ(2, wsqueue_capacity(queue), "Initial capacity should be 2");
-  ASSERT_TRUE(wsqueue_empty(queue), "Queue should be empty");
+  ASSERT_EQ(2, chiba_wsqueue_capacity(queue), "Initial capacity should be 2");
+  ASSERT_TRUE(chiba_wsqueue_is_empty(queue), "Queue should be empty");
 
   SimpleDeque *gold = simple_deque_new(16);
 
   // Test with increasing sizes
   for (i32 i = 2; i <= (1 << 10); i <<= 1) {
-    ASSERT_TRUE(wsqueue_empty(queue), "Queue should be empty at start");
+    ASSERT_TRUE(chiba_wsqueue_is_empty(queue),
+                "Queue should be empty at start");
 
     // Push items
     for (i32 j = 0; j < i; j++) {
-      ASSERT_TRUE(wsqueue_push(queue, (anyptr)(i64)(j + 1)),
+      ASSERT_TRUE(chiba_wsqueue_push(queue, (anyptr)(i64)(j + 1), true),
                   "Push should succeed");
     }
 
     // Pop items (LIFO order)
     for (i32 j = 0; j < i; j++) {
-      anyptr item = wsqueue_pop(queue);
+      anyptr item = chiba_wsqueue_pop(queue);
       ASSERT_NOT_NULL(item, "Pop should return non-NULL");
       ASSERT_EQ(i - j, (i64)item, "Popped item should match (LIFO)");
     }
-    ASSERT_NULL(wsqueue_pop(queue), "Pop from empty queue should return NULL");
+    ASSERT_NULL(chiba_wsqueue_pop(queue),
+                "Pop from empty queue should return NULL");
 
-    ASSERT_TRUE(wsqueue_empty(queue), "Queue should be empty after pops");
+    ASSERT_TRUE(chiba_wsqueue_is_empty(queue),
+                "Queue should be empty after pops");
 
     // Push and steal (FIFO order)
     for (i32 j = 0; j < i; j++) {
-      ASSERT_TRUE(wsqueue_push(queue, (anyptr)(i64)(j + 1)),
+      ASSERT_TRUE(chiba_wsqueue_push(queue, (anyptr)(i64)(j + 1), true),
                   "Push should succeed");
     }
 
     for (i32 j = 0; j < i; j++) {
-      anyptr item = wsqueue_steal(queue);
+      anyptr item = chiba_wsqueue_steal(queue);
       ASSERT_NOT_NULL(item, "Steal should return non-NULL");
       ASSERT_EQ(j + 1, (i64)item, "Stolen item should match (FIFO)");
     }
-    ASSERT_NULL(wsqueue_pop(queue), "Pop from empty queue should return NULL");
+    ASSERT_NULL(chiba_wsqueue_pop(queue),
+                "Pop from empty queue should return NULL");
 
-    ASSERT_TRUE(wsqueue_empty(queue), "Queue should be empty after steals");
+    ASSERT_TRUE(chiba_wsqueue_is_empty(queue),
+                "Queue should be empty after steals");
 
     printf("   Tested size %d successfully\n", i);
   }
 
   simple_deque_destroy(gold);
-  wsqueue_destroy(queue);
+  chiba_wsqueue_drop(queue);
   return 0;
 })
 
@@ -108,7 +113,7 @@ TEST_CASE(owner_operations, dequeue, "Test owner push/pop operations", {
 TEST_CASE(mixed_operations, dequeue, "Test mixed push/pop/steal operations", {
   DESC(mixed_operations);
 
-  WorkStealingQueue *queue = wsqueue_new(2);
+  CHIBA_WSQueue *queue = chiba_wsqueue_new(2);
   ASSERT_NOT_NULL(queue, "Queue should be created");
 
   SimpleDeque *gold = simple_deque_new(1024);
@@ -121,11 +126,11 @@ TEST_CASE(mixed_operations, dequeue, "Test mixed push/pop/steal operations", {
 
     if (dice == 0) {
       // Push
-      wsqueue_push(queue, (anyptr)(i64)(i + 1));
+      chiba_wsqueue_push(queue, (anyptr)(i64)(i + 1), true);
       simple_deque_push_back(gold, i + 1);
     } else if (dice == 1) {
       // Pop back
-      anyptr item = wsqueue_pop(queue);
+      anyptr item = chiba_wsqueue_pop(queue);
       if (simple_deque_empty(gold)) {
         ASSERT_NULL(item, "Pop should return NULL when gold is empty");
       } else {
@@ -135,7 +140,7 @@ TEST_CASE(mixed_operations, dequeue, "Test mixed push/pop/steal operations", {
       }
     } else {
       // Steal front
-      anyptr item = wsqueue_steal(queue);
+      anyptr item = chiba_wsqueue_steal(queue);
       if (simple_deque_empty(gold)) {
         ASSERT_NULL(item, "Steal should return NULL when gold is empty");
       } else {
@@ -146,13 +151,13 @@ TEST_CASE(mixed_operations, dequeue, "Test mixed push/pop/steal operations", {
       }
     }
 
-    ASSERT_EQ(simple_deque_size(gold), (i64)wsqueue_size(queue),
+    ASSERT_EQ(simple_deque_size(gold), (i64)chiba_wsqueue_size(queue),
               "Queue size should match gold size");
   }
 
   // Drain remaining items
-  while (!wsqueue_empty(queue)) {
-    anyptr item = wsqueue_pop(queue);
+  while (!chiba_wsqueue_is_empty(queue)) {
+    anyptr item = chiba_wsqueue_pop(queue);
     ASSERT_NOT_NULL(item, "Item should not be NULL");
     i64 gold_val = simple_deque_pop_back(gold);
     ASSERT_EQ(gold_val, (i64)item, "Remaining items should match");
@@ -161,7 +166,7 @@ TEST_CASE(mixed_operations, dequeue, "Test mixed push/pop/steal operations", {
   ASSERT_TRUE(simple_deque_empty(gold), "Gold should be empty");
 
   simple_deque_destroy(gold);
-  wsqueue_destroy(queue);
+  chiba_wsqueue_drop(queue);
   return 0;
 })
 
@@ -174,7 +179,7 @@ typedef struct {
 } ConsumerDeque;
 
 typedef struct {
-  WorkStealingQueue *queue;
+  CHIBA_WSQueue *queue;
   ConsumerDeque *cdeqs;
   atomic_int *pdeq_size;
   i32 N;
@@ -196,7 +201,7 @@ void *consumer_thread(void *arg) {
 
     // 25% chance to steal
     if (rand() % 4 == 0) {
-      anyptr item = wsqueue_steal(args->queue);
+      anyptr item = chiba_wsqueue_steal(args->queue);
       if (item != NULL) {
         // sleep 10ms
         struct timespec ts;
@@ -213,7 +218,7 @@ void *consumer_thread(void *arg) {
 
 // Test with N thieves
 PRIVATE int test_n_thieves(i32 N, i32 item_count) {
-  WorkStealingQueue *queue = wsqueue_new(2);
+  CHIBA_WSQueue *queue = chiba_wsqueue_new(2);
   if (!queue)
     return -1;
 
@@ -243,7 +248,7 @@ PRIVATE int test_n_thieves(i32 N, i32 item_count) {
 
   // Calculate total stolen items
   typedef struct {
-    WorkStealingQueue *queue;
+    CHIBA_WSQueue *queue;
     ConsumerDeque *cdeqs;
     atomic_int *pdeq_size;
     i32 N;
@@ -273,11 +278,11 @@ PRIVATE int test_n_thieves(i32 N, i32 item_count) {
       // 25% chance to push
       i32 val = atomic_fetch_add(&p, 1);
       if (val < item_count) {
-        wsqueue_push(queue, (anyptr)(i64)(val + 1));
+        chiba_wsqueue_push(queue, (anyptr)(i64)(val + 1), true);
       }
     } else if (dice == 1) {
       // 25% chance to pop
-      anyptr item = wsqueue_pop(queue);
+      anyptr item = chiba_wsqueue_pop(queue);
       if (item != NULL) {
         i32 idx = atomic_fetch_add(&pdeq_size, 1);
         pdeq[idx] = (i64)item;
@@ -291,7 +296,8 @@ PRIVATE int test_n_thieves(i32 N, i32 item_count) {
   }
 
   // Verify queue is empty
-  ASSERT_TRUE(wsqueue_empty(queue), "Queue should be empty after test");
+  ASSERT_TRUE(chiba_wsqueue_is_empty(queue),
+              "Queue should be empty after test");
 
   // Collect all values into a set
   bool *seen = (bool *)CHIBA_INTERNAL_malloc(sizeof(bool) * (item_count + 1));
@@ -343,7 +349,7 @@ PRIVATE int test_n_thieves(i32 N, i32 item_count) {
   CHIBA_INTERNAL_free(pdeq);
   CHIBA_INTERNAL_free(thieves);
   CHIBA_INTERNAL_free(consumer_args);
-  wsqueue_destroy(queue);
+  chiba_wsqueue_drop(queue);
 
   return result;
 }

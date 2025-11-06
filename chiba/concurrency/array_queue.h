@@ -17,7 +17,7 @@ typedef struct {
 
   // The value in this slot
   anyptr value;
-} ArrayQueueSlot;
+} chiba_arrayqueue_slot;
 
 // A bounded multi-producer multi-consumer queue
 typedef struct {
@@ -28,30 +28,31 @@ typedef struct {
   atomic_u64 tail __attribute__((aligned(64)));
 
   // The buffer holding slots
-  ArrayQueueSlot *buffer;
+  chiba_arrayqueue_slot *buffer;
 
   // Capacity of the buffer
   u64 capacity;
 
   // A stamp with the value of { lap: 1, index: 0 }
   u64 one_lap;
-} ArrayQueue;
+} chiba_arrayqueue;
 
 // Creates a new bounded queue with the given capacity
 // Returns NULL if capacity is zero or allocation fails
-PRIVATE ArrayQueue *array_queue_new(u64 cap) {
+PRIVATE chiba_arrayqueue *chiba_arrayqueue_new(u64 cap) {
   if (cap == 0) {
-    fprintf(stderr, "array_queue_new: capacity must be non-zero\n");
+    fprintf(stderr, "chiba_arrayqueue_new: capacity must be non-zero\n");
     return NULL;
   }
 
-  ArrayQueue *queue = (ArrayQueue *)CHIBA_INTERNAL_malloc(sizeof(ArrayQueue));
+  chiba_arrayqueue *queue =
+      (chiba_arrayqueue *)CHIBA_INTERNAL_malloc(sizeof(chiba_arrayqueue));
   if (!queue)
     return NULL;
 
   // Allocate buffer
-  queue->buffer =
-      (ArrayQueueSlot *)CHIBA_INTERNAL_malloc(sizeof(ArrayQueueSlot) * cap);
+  queue->buffer = (chiba_arrayqueue_slot *)CHIBA_INTERNAL_malloc(
+      sizeof(chiba_arrayqueue_slot) * cap);
   if (!queue->buffer) {
     CHIBA_INTERNAL_free(queue);
     return NULL;
@@ -69,13 +70,28 @@ PRIVATE ArrayQueue *array_queue_new(u64 cap) {
   queue->one_lap = cap + 1;
 
   // Round up to next power of two
-  queue->one_lap--;
-  queue->one_lap |= queue->one_lap >> 1;
-  queue->one_lap |= queue->one_lap >> 2;
-  queue->one_lap |= queue->one_lap >> 4;
-  queue->one_lap |= queue->one_lap >> 8;
-  queue->one_lap |= queue->one_lap >> 16;
-  queue->one_lap |= queue->one_lap >> 32;
+
+  if (likely(sizeof(anyptr) == 8)) {
+    queue->one_lap--;
+    queue->one_lap |= queue->one_lap >> 1;
+    queue->one_lap |= queue->one_lap >> 2;
+    queue->one_lap |= queue->one_lap >> 4;
+    queue->one_lap |= queue->one_lap >> 8;
+    queue->one_lap |= queue->one_lap >> 16;
+    queue->one_lap |= queue->one_lap >> 32;
+  } else if (likely(sizeof(anyptr) == 4)) {
+    queue->one_lap--;
+    queue->one_lap |= queue->one_lap >> 1;
+    queue->one_lap |= queue->one_lap >> 2;
+    queue->one_lap |= queue->one_lap >> 4;
+    queue->one_lap |= queue->one_lap >> 8;
+    queue->one_lap |= queue->one_lap >> 16;
+  } else {
+    fprintf(stderr, "chiba_arrayqueue_new: unsupported pointer size\n");
+    CHIBA_INTERNAL_free(queue->buffer);
+    CHIBA_INTERNAL_free(queue);
+    return NULL;
+  }
   queue->one_lap++;
 
   // Head is initialized to { lap: 0, index: 0 }
@@ -87,13 +103,16 @@ PRIVATE ArrayQueue *array_queue_new(u64 cap) {
 }
 
 // Helper function type for push_or_else
-typedef bool (*PushElseFunc)(anyptr value, u64 tail, u64 new_tail,
-                             ArrayQueueSlot *slot, ArrayQueue *queue,
-                             anyptr *out_value);
+typedef bool (*chiba_arrayqueue_push_else_func)(anyptr value, u64 tail,
+                                                u64 new_tail,
+                                                chiba_arrayqueue_slot *slot,
+                                                chiba_arrayqueue *queue,
+                                                anyptr *out_value);
 
 // Internal push_or_else implementation
-PRIVATE bool array_queue_push_or_else(ArrayQueue *queue, anyptr value,
-                                      PushElseFunc f, anyptr *out_value) {
+PRIVATE bool chiba_arrayqueue_push_else(chiba_arrayqueue *queue, anyptr value,
+                                        chiba_arrayqueue_push_else_func f,
+                                        anyptr *out_value) {
   chiba_backoff backoff = {.step = 0};
   u64 tail = atomic_load_explicit(&queue->tail, memory_order_relaxed);
 
@@ -112,7 +131,7 @@ PRIVATE bool array_queue_push_or_else(ArrayQueue *queue, anyptr value,
     }
 
     // Inspect the corresponding slot
-    ArrayQueueSlot *slot = &queue->buffer[index];
+    chiba_arrayqueue_slot *slot = &queue->buffer[index];
     u64 stamp = atomic_load_explicit(&slot->stamp, memory_order_acquire);
 
     // If the tail and the stamp match, we may attempt to push
@@ -145,9 +164,10 @@ PRIVATE bool array_queue_push_or_else(ArrayQueue *queue, anyptr value,
 }
 
 // Helper for regular push
-PRIVATE bool array_queue_push_helper(anyptr value, u64 tail, u64 new_tail,
-                                     ArrayQueueSlot *slot, ArrayQueue *queue,
-                                     anyptr *out_value) {
+PRIVATE bool chiba_arrayqueue_push_helper(anyptr value, u64 tail, u64 new_tail,
+                                          chiba_arrayqueue_slot *slot,
+                                          chiba_arrayqueue *queue,
+                                          anyptr *out_value) {
   (void)new_tail;
   (void)slot;
 
@@ -163,13 +183,14 @@ PRIVATE bool array_queue_push_helper(anyptr value, u64 tail, u64 new_tail,
 
 // Attempts to push an element into the queue
 // Returns true on success, false if the queue is full
-PRIVATE bool array_queue_push(ArrayQueue *queue, anyptr value) {
-  return array_queue_push_or_else(queue, value, array_queue_push_helper, NULL);
+PRIVATE bool chiba_arrayqueue_push(chiba_arrayqueue *queue, anyptr value) {
+  return chiba_arrayqueue_push_else(queue, value, chiba_arrayqueue_push_helper,
+                                    NULL);
 }
 
 // Attempts to pop an element from the queue
 // Returns NULL if the queue is empty
-PRIVATE anyptr array_queue_pop(ArrayQueue *queue) {
+PRIVATE anyptr chiba_arrayqueue_pop(chiba_arrayqueue *queue) {
   chiba_backoff backoff = {.step = 0};
   u64 head = atomic_load_explicit(&queue->head, memory_order_relaxed);
 
@@ -179,7 +200,7 @@ PRIVATE anyptr array_queue_pop(ArrayQueue *queue) {
     u64 lap = head & ~(queue->one_lap - 1);
 
     // Inspect the corresponding slot
-    ArrayQueueSlot *slot = &queue->buffer[index];
+    chiba_arrayqueue_slot *slot = &queue->buffer[index];
     u64 stamp = atomic_load_explicit(&slot->stamp, memory_order_acquire);
 
     // If the stamp is ahead of the head by 1, we may attempt to pop
@@ -224,12 +245,12 @@ PRIVATE anyptr array_queue_pop(ArrayQueue *queue) {
 }
 
 // Returns the capacity of the queue
-UTILS u64 array_queue_capacity(const ArrayQueue *queue) {
+UTILS u64 chiba_arrayqueue_capacity(const chiba_arrayqueue *queue) {
   return queue->capacity;
 }
 
 // Returns true if the queue is empty
-PRIVATE bool array_queue_is_empty(const ArrayQueue *queue) {
+PRIVATE bool chiba_arrayqueue_is_empty(const chiba_arrayqueue *queue) {
   u64 head =
       atomic_load_explicit((atomic_u64 *)&queue->head, memory_order_seq_cst);
   u64 tail =
@@ -238,7 +259,7 @@ PRIVATE bool array_queue_is_empty(const ArrayQueue *queue) {
 }
 
 // Returns true if the queue is full
-PRIVATE bool array_queue_is_full(const ArrayQueue *queue) {
+PRIVATE bool chiba_arrayqueue_is_full(const chiba_arrayqueue *queue) {
   u64 tail =
       atomic_load_explicit((atomic_u64 *)&queue->tail, memory_order_seq_cst);
   u64 head =
@@ -247,7 +268,7 @@ PRIVATE bool array_queue_is_full(const ArrayQueue *queue) {
 }
 
 // Returns the number of elements in the queue
-PRIVATE u64 array_queue_len(const ArrayQueue *queue) {
+PRIVATE u64 chiba_arrayqueue_size(const chiba_arrayqueue *queue) {
   while (1) {
     // Load the tail, then load the head
     u64 tail =
@@ -276,7 +297,7 @@ PRIVATE u64 array_queue_len(const ArrayQueue *queue) {
 
 // Destroys the queue and frees all allocated memory
 // Note: Does not free the contained pointers - caller must handle that
-PRIVATE void array_queue_destroy(ArrayQueue *queue) {
+PRIVATE void chiba_arrayqueue_drop(chiba_arrayqueue *queue) {
   if (!queue)
     return;
   CHIBA_INTERNAL_free(queue->buffer);

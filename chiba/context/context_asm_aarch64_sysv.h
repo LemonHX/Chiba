@@ -9,6 +9,7 @@
 #define CHIBA_CO_ASM
 #define CHIBA_CO_READY
 #define CHIBA_CO_METHOD "asm,aarch64"
+NOINLINE PRIVATE void CHIBA_co_entry(anyptr arg) __attribute__((noreturn));
 
 struct CHIBA_co_asmctx {
   anyptr x[12]; /* x19-x30 */
