@@ -33,3 +33,10 @@ UTILS void CHIBA_INTERNAL_free(anyptr ptr) {
     return;
   ((void (*)(anyptr))CHIBA_INTERNAL_free_func)(ptr);
 }
+
+#define CHIBA_PANIC(fmt, ...)                                                  \
+  do {                                                                         \
+    fprintf(stderr, "CHIBA PANIC at %s:%d in %s(): " fmt "\n", __FILE__,       \
+            __LINE__, __func__, ##__VA_ARGS__);                                \
+    abort();                                                                   \
+  } while (0)

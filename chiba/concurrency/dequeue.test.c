@@ -54,7 +54,7 @@ PRIVATE bool simple_deque_empty(const SimpleDeque *deq) {
 TEST_CASE(owner_operations, dequeue, "Test owner push/pop operations", {
   DESC(owner_operations);
 
-  CHIBA_WSQueue *queue = chiba_wsqueue_new(2);
+  chiba_wsqueue *queue = chiba_wsqueue_new(2);
   ASSERT_NOT_NULL(queue, "Queue should be created");
   ASSERT_EQ(2, chiba_wsqueue_capacity(queue), "Initial capacity should be 2");
   ASSERT_TRUE(chiba_wsqueue_is_empty(queue), "Queue should be empty");
@@ -113,7 +113,7 @@ TEST_CASE(owner_operations, dequeue, "Test owner push/pop operations", {
 TEST_CASE(mixed_operations, dequeue, "Test mixed push/pop/steal operations", {
   DESC(mixed_operations);
 
-  CHIBA_WSQueue *queue = chiba_wsqueue_new(2);
+  chiba_wsqueue *queue = chiba_wsqueue_new(2);
   ASSERT_NOT_NULL(queue, "Queue should be created");
 
   SimpleDeque *gold = simple_deque_new(1024);
@@ -179,7 +179,7 @@ typedef struct {
 } ConsumerDeque;
 
 typedef struct {
-  CHIBA_WSQueue *queue;
+  chiba_wsqueue *queue;
   ConsumerDeque *cdeqs;
   atomic_int *pdeq_size;
   i32 N;
@@ -218,7 +218,7 @@ void *consumer_thread(void *arg) {
 
 // Test with N thieves
 PRIVATE int test_n_thieves(i32 N, i32 item_count) {
-  CHIBA_WSQueue *queue = chiba_wsqueue_new(2);
+  chiba_wsqueue *queue = chiba_wsqueue_new(2);
   if (!queue)
     return -1;
 
@@ -248,7 +248,7 @@ PRIVATE int test_n_thieves(i32 N, i32 item_count) {
 
   // Calculate total stolen items
   typedef struct {
-    CHIBA_WSQueue *queue;
+    chiba_wsqueue *queue;
     ConsumerDeque *cdeqs;
     atomic_int *pdeq_size;
     i32 N;

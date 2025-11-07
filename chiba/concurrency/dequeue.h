@@ -11,25 +11,25 @@ typedef struct {
   i64 capacity;       // C in the paper
   i64 mask;           // M in the paper (capacity - 1)
   _Atomic(anyptr) *S; // Array of atomic pointers
-} CHIBA_WSQArray;
+} chiba_wsqarray;
 
 // Work-stealing queue structure
 // Single-producer (owner) multiple-consumer queue
 typedef struct {
   _Atomic(i64) top __attribute__((aligned(64)));
   _Atomic(i64) bottom __attribute__((aligned(64)));
-  _Atomic(CHIBA_WSQArray *) array;
+  _Atomic(chiba_wsqarray *) array;
 
   // Garbage collection for old arrays
-  CHIBA_WSQArray **garbage;
+  chiba_wsqarray **garbage;
   i32 garbage_count;
   i32 garbage_capacity;
-} CHIBA_WSQueue;
+} chiba_wsqueue;
 
 // Create a new array with given capacity
-PRIVATE CHIBA_WSQArray *chiba_wsqarray_new(i64 capacity) {
-  CHIBA_WSQArray *arr =
-      (CHIBA_WSQArray *)CHIBA_INTERNAL_malloc(sizeof(CHIBA_WSQArray));
+PRIVATE chiba_wsqarray *chiba_wsqarray_new(i64 capacity) {
+  chiba_wsqarray *arr =
+      (chiba_wsqarray *)CHIBA_INTERNAL_malloc(sizeof(chiba_wsqarray));
   if (!arr)
     return NULL;
 
@@ -52,7 +52,7 @@ PRIVATE CHIBA_WSQArray *chiba_wsqarray_new(i64 capacity) {
 }
 
 // Destroy an array
-PRIVATE void chiba_wsqarray_drop(CHIBA_WSQArray *arr) {
+PRIVATE void chiba_wsqarray_drop(chiba_wsqarray *arr) {
   if (!arr)
     return;
   CHIBA_INTERNAL_free(arr->S);
@@ -60,19 +60,19 @@ PRIVATE void chiba_wsqarray_drop(CHIBA_WSQArray *arr) {
 }
 
 // Push element to array at index i
-PRIVATE void chiba_wsqarray_push(CHIBA_WSQArray *arr, i64 i, anyptr item) {
+PRIVATE void chiba_wsqarray_push(chiba_wsqarray *arr, i64 i, anyptr item) {
   atomic_store_explicit(&arr->S[i & arr->mask], item, memory_order_relaxed);
 }
 
 // Pop element from array at index i
-PRIVATE anyptr chiba_wsqarray_pop(CHIBA_WSQArray *arr, i64 i) {
+PRIVATE anyptr chiba_wsqarray_pop(chiba_wsqarray *arr, i64 i) {
   return atomic_load_explicit(&arr->S[i & arr->mask], memory_order_relaxed);
 }
 
 // Resize array (double the capacity)
-PRIVATE CHIBA_WSQArray *chiba_wsqarray_resize(CHIBA_WSQArray *arr, i64 bottom,
+PRIVATE chiba_wsqarray *chiba_wsqarray_resize(chiba_wsqarray *arr, i64 bottom,
                                               i64 top) {
-  CHIBA_WSQArray *new_arr = chiba_wsqarray_new(2 * arr->capacity);
+  chiba_wsqarray *new_arr = chiba_wsqarray_new(2 * arr->capacity);
   if (!new_arr)
     return NULL;
 
@@ -85,21 +85,21 @@ PRIVATE CHIBA_WSQArray *chiba_wsqarray_resize(CHIBA_WSQArray *arr, i64 bottom,
 }
 
 // Create a new work-stealing queue
-PRIVATE CHIBA_WSQueue *chiba_wsqueue_new(i64 capacity) {
+PRIVATE chiba_wsqueue *chiba_wsqueue_new(i64 capacity) {
   // Capacity must be power of 2
   if (capacity <= 0 || (capacity & (capacity - 1)) != 0) {
     return NULL;
   }
 
-  CHIBA_WSQueue *queue =
-      (CHIBA_WSQueue *)CHIBA_INTERNAL_malloc(sizeof(CHIBA_WSQueue));
+  chiba_wsqueue *queue =
+      (chiba_wsqueue *)CHIBA_INTERNAL_malloc(sizeof(chiba_wsqueue));
   if (!queue)
     return NULL;
 
   atomic_init(&queue->top, 0);
   atomic_init(&queue->bottom, 0);
 
-  CHIBA_WSQArray *arr = chiba_wsqarray_new(capacity);
+  chiba_wsqarray *arr = chiba_wsqarray_new(capacity);
   if (!arr) {
     CHIBA_INTERNAL_free(queue);
     return NULL;
@@ -110,8 +110,8 @@ PRIVATE CHIBA_WSQueue *chiba_wsqueue_new(i64 capacity) {
   // Initialize garbage collection
   queue->garbage_capacity = 32;
   queue->garbage_count = 0;
-  queue->garbage = (CHIBA_WSQArray **)CHIBA_INTERNAL_malloc(
-      sizeof(CHIBA_WSQArray *) * queue->garbage_capacity);
+  queue->garbage = (chiba_wsqarray **)CHIBA_INTERNAL_malloc(
+      sizeof(chiba_wsqarray *) * queue->garbage_capacity);
 
   if (!queue->garbage) {
     chiba_wsqarray_drop(arr);
@@ -123,7 +123,7 @@ PRIVATE CHIBA_WSQueue *chiba_wsqueue_new(i64 capacity) {
 }
 
 // Destroy work-stealing queue
-PRIVATE void chiba_wsqueue_drop(CHIBA_WSQueue *queue) {
+PRIVATE void chiba_wsqueue_drop(chiba_wsqueue *queue) {
   if (!queue)
     return;
 
@@ -134,7 +134,7 @@ PRIVATE void chiba_wsqueue_drop(CHIBA_WSQueue *queue) {
   CHIBA_INTERNAL_free(queue->garbage);
 
   // Clean up current array
-  CHIBA_WSQArray *arr =
+  chiba_wsqarray *arr =
       atomic_load_explicit(&queue->array, memory_order_relaxed);
   chiba_wsqarray_drop(arr);
 
@@ -142,7 +142,7 @@ PRIVATE void chiba_wsqueue_drop(CHIBA_WSQueue *queue) {
 }
 
 // Check if queue is empty
-PRIVATE bool chiba_wsqueue_is_empty(const CHIBA_WSQueue *queue) {
+PRIVATE bool chiba_wsqueue_is_empty(const chiba_wsqueue *queue) {
   i64 b = atomic_load_explicit((_Atomic(i64) *)&queue->bottom,
                                memory_order_relaxed);
   i64 t =
@@ -151,7 +151,7 @@ PRIVATE bool chiba_wsqueue_is_empty(const CHIBA_WSQueue *queue) {
 }
 
 // Get queue size
-PRIVATE u64 chiba_wsqueue_size(const CHIBA_WSQueue *queue) {
+PRIVATE u64 chiba_wsqueue_size(const chiba_wsqueue *queue) {
   i64 b = atomic_load_explicit((_Atomic(i64) *)&queue->bottom,
                                memory_order_relaxed);
   i64 t =
@@ -160,24 +160,24 @@ PRIVATE u64 chiba_wsqueue_size(const CHIBA_WSQueue *queue) {
 }
 
 // Get queue capacity
-PRIVATE i64 chiba_wsqueue_capacity(const CHIBA_WSQueue *queue) {
-  CHIBA_WSQArray *arr = atomic_load_explicit(
-      (_Atomic(CHIBA_WSQArray *) *)&queue->array, memory_order_relaxed);
+PRIVATE i64 chiba_wsqueue_capacity(const chiba_wsqueue *queue) {
+  chiba_wsqarray *arr = atomic_load_explicit(
+      (_Atomic(chiba_wsqarray *) *)&queue->array, memory_order_relaxed);
   return arr->capacity;
 }
 
 // Push item to queue (only owner thread)
-PRIVATE bool chiba_wsqueue_push(CHIBA_WSQueue *queue, anyptr item,
+PRIVATE bool chiba_wsqueue_push(chiba_wsqueue *queue, anyptr item,
                                 bool resize_if_full) {
   i64 b = atomic_load_explicit(&queue->bottom, memory_order_relaxed);
   i64 t = atomic_load_explicit(&queue->top, memory_order_acquire);
-  CHIBA_WSQArray *arr =
+  chiba_wsqarray *arr =
       atomic_load_explicit(&queue->array, memory_order_relaxed);
 
   // Queue is full, need to resize
   if (arr->capacity - 1 < (b - t)) {
     if (resize_if_full) {
-      CHIBA_WSQArray *new_arr = chiba_wsqarray_resize(arr, b, t);
+      chiba_wsqarray *new_arr = chiba_wsqarray_resize(arr, b, t);
       if (!new_arr)
         return false;
 
@@ -185,9 +185,9 @@ PRIVATE bool chiba_wsqueue_push(CHIBA_WSQueue *queue, anyptr item,
       if (queue->garbage_count >= queue->garbage_capacity) {
         // Expand garbage array
         i32 new_capacity = queue->garbage_capacity * 2;
-        CHIBA_WSQArray **new_garbage =
-            (CHIBA_WSQArray **)CHIBA_INTERNAL_realloc(
-                queue->garbage, sizeof(CHIBA_WSQArray *) * new_capacity);
+        chiba_wsqarray **new_garbage =
+            (chiba_wsqarray **)CHIBA_INTERNAL_realloc(
+                queue->garbage, sizeof(chiba_wsqarray *) * new_capacity);
         if (!new_garbage) {
           chiba_wsqarray_drop(new_arr);
           return false;
@@ -214,9 +214,9 @@ PRIVATE bool chiba_wsqueue_push(CHIBA_WSQueue *queue, anyptr item,
 
 // Pop item from queue (only owner thread)
 // Returns NULL if queue is empty or pop failed
-PRIVATE anyptr chiba_wsqueue_pop(CHIBA_WSQueue *queue) {
+PRIVATE anyptr chiba_wsqueue_pop(chiba_wsqueue *queue) {
   i64 b = atomic_load_explicit(&queue->bottom, memory_order_relaxed) - 1;
-  CHIBA_WSQArray *arr =
+  chiba_wsqarray *arr =
       atomic_load_explicit(&queue->array, memory_order_relaxed);
   atomic_store_explicit(&queue->bottom, b, memory_order_relaxed);
   atomic_thread_fence(memory_order_seq_cst);
@@ -244,7 +244,7 @@ PRIVATE anyptr chiba_wsqueue_pop(CHIBA_WSQueue *queue) {
 
 // Steal item from queue (any thread)
 // Returns NULL if queue is empty or steal failed
-PRIVATE anyptr chiba_wsqueue_steal(CHIBA_WSQueue *queue) {
+PRIVATE anyptr chiba_wsqueue_steal(chiba_wsqueue *queue) {
   i64 t = atomic_load_explicit(&queue->top, memory_order_acquire);
   atomic_thread_fence(memory_order_seq_cst);
   i64 b = atomic_load_explicit(&queue->bottom, memory_order_acquire);
@@ -252,7 +252,7 @@ PRIVATE anyptr chiba_wsqueue_steal(CHIBA_WSQueue *queue) {
   anyptr item = NULL;
 
   if (t < b) {
-    CHIBA_WSQArray *arr =
+    chiba_wsqarray *arr =
         atomic_load_explicit(&queue->array, memory_order_consume);
     item = chiba_wsqarray_pop(arr, t);
     if (!atomic_compare_exchange_strong_explicit(&queue->top, &t, t + 1,

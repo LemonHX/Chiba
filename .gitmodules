@@ -10,3 +10,6 @@
 [submodule "third_party/lsquic"]
 	path = third_party/lsquic
 	url = https://github.com/litespeedtech/lsquic
+[submodule "third_party/mimalloc"]
+	path = third_party/mimalloc
+	url = https://github.com/microsoft/mimalloc

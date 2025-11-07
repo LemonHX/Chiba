@@ -65,7 +65,7 @@ typedef struct ThreadPool {
 
   // 偷取队列
   // 初始大小 65536
-  CHIBA_WSQueue *blocking_queue;
+  chiba_wsqueue *blocking_queue;
 
   i32 worker_count;            // 该节点上的 worker 数量
   i32 *worker_ids;             // Worker ID 列表
