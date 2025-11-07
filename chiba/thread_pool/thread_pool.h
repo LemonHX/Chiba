@@ -5,7 +5,6 @@
 //
 // 特性:
 // - Work stealing: 线程优先从本地队列取任务,空闲时从其他队列窃取
-// - 线程亲和性: 线程绑定到对应 NUMA 节点的 CPU
 // - Future 机制: 异步任务返回 future, 支持错误处理
 //
 // 使用 pthread (POSIX) 和 pthread-win32 (Windows)
@@ -16,9 +15,7 @@
 #include "../common_headers.h"
 #include "../concurrency/dequeue.h"
 #include "../concurrency/future.h"
-
-PUBLIC void threadpool_await_other_future(chiba_future *self_future,
-                                          chiba_future *future);
+#include "../utils/backoff.h"
 
 //////////////////////////////////////////////////////////////////////////////////
 // 任务结构
@@ -28,12 +25,13 @@ PUBLIC void threadpool_await_other_future(chiba_future *self_future,
 // - arg: 用户传入的参数
 // - future: 任务对应的 future,可用于检查取消状态, 传入时需要为空
 // - 返回值: 任务结果,会存储到 future 中
-typedef anyptr (*TaskFunc)(anyptr arg, chiba_future *future);
+typedef anyptr (*TaskFunc)(anyptr arg,
+                           chiba_shared_ptr_param(chiba_future) future);
 
 typedef struct ThreadPoolBlockingTask {
-  TaskFunc func;        // 任务函数
-  anyptr arg;           // 任务参数
-  chiba_future *future; // 关联的 future
+  TaskFunc func;                               // 任务函数
+  anyptr arg;                                  // 任务参数
+  chiba_shared_ptr_param(chiba_future) future; // 关联的 future
 } ThreadPoolTask;
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -63,8 +61,7 @@ typedef struct ThreadPool {
   // Worker 线程
   ThreadPoolWorker *workers; // worker 线程数组
 
-  // 偷取队列
-  // 初始大小 65536
+  // 任务队列 (work stealing deque)
   chiba_wsqueue *blocking_queue;
 
   i32 worker_count;            // 该节点上的 worker 数量
@@ -104,8 +101,9 @@ PUBLIC void threadpool_destroy(ThreadPool **pool);
  * @param arg 任务参数
  * @return future 指针,失败返回 NULL
  */
-PUBLIC chiba_future *threadpool_submit_blocking_task(ThreadPool *pool,
-                                                     TaskFunc func, anyptr arg);
+PUBLIC chiba_shared_ptr_param(chiba_future)
+    threadpool_submit_blocking_task(ThreadPool *pool, TaskFunc func,
+                                    anyptr arg);
 
 typedef struct threadpool_stats {
   u64 total_tasks_submitted;
@@ -113,21 +111,8 @@ typedef struct threadpool_stats {
   i32 total_workers;
   i32 idle_workers;
 } threadpool_stats;
+
 /**
  * 获取线程池统计信息
  */
 PUBLIC threadpool_stats get_threadpool_stats(ThreadPool *pool);
-
-//////////////////////////////////////////////////////////////////////////////////
-// 内部函数声明 (实现在 .c 文件中)
-//////////////////////////////////////////////////////////////////////////////////
-
-// Worker 线程主循环
-PRIVATE void *threadpool_worker_main(void *arg);
-
-// 执行任务
-PRIVATE void threadpool_execute_task(ThreadPoolWorker *worker,
-                                     ThreadPoolTask *task);
-
-// 获取系统 CPU 核心数
-PRIVATE int threadpool_get_cpu_count(void);

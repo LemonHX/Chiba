@@ -39,7 +39,7 @@ typedef struct {
 
 // Creates a new bounded queue with the given capacity
 // Returns NULL if capacity is zero or allocation fails
-PRIVATE chiba_arrayqueue *chiba_arrayqueue_new(u64 cap) {
+UTILS chiba_arrayqueue *chiba_arrayqueue_new(u64 cap) {
   if (cap == 0) {
     fprintf(stderr, "chiba_arrayqueue_new: capacity must be non-zero\n");
     return NULL;
@@ -110,9 +110,9 @@ typedef bool (*chiba_arrayqueue_push_else_func)(anyptr value, u64 tail,
                                                 anyptr *out_value);
 
 // Internal push_or_else implementation
-PRIVATE bool chiba_arrayqueue_push_else(chiba_arrayqueue *queue, anyptr value,
-                                        chiba_arrayqueue_push_else_func f,
-                                        anyptr *out_value) {
+UTILS bool chiba_arrayqueue_push_else(chiba_arrayqueue *queue, anyptr value,
+                                      chiba_arrayqueue_push_else_func f,
+                                      anyptr *out_value) {
   chiba_backoff backoff = {.step = 0};
   u64 tail = atomic_load_explicit(&queue->tail, memory_order_relaxed);
 
@@ -164,10 +164,10 @@ PRIVATE bool chiba_arrayqueue_push_else(chiba_arrayqueue *queue, anyptr value,
 }
 
 // Helper for regular push
-PRIVATE bool chiba_arrayqueue_push_helper(anyptr value, u64 tail, u64 new_tail,
-                                          chiba_arrayqueue_slot *slot,
-                                          chiba_arrayqueue *queue,
-                                          anyptr *out_value) {
+UTILS bool chiba_arrayqueue_push_helper(anyptr value, u64 tail, u64 new_tail,
+                                        chiba_arrayqueue_slot *slot,
+                                        chiba_arrayqueue *queue,
+                                        anyptr *out_value) {
   (void)new_tail;
   (void)slot;
 
@@ -183,14 +183,14 @@ PRIVATE bool chiba_arrayqueue_push_helper(anyptr value, u64 tail, u64 new_tail,
 
 // Attempts to push an element into the queue
 // Returns true on success, false if the queue is full
-PRIVATE bool chiba_arrayqueue_push(chiba_arrayqueue *queue, anyptr value) {
+UTILS bool chiba_arrayqueue_push(chiba_arrayqueue *queue, anyptr value) {
   return chiba_arrayqueue_push_else(queue, value, chiba_arrayqueue_push_helper,
                                     NULL);
 }
 
 // Attempts to pop an element from the queue
 // Returns NULL if the queue is empty
-PRIVATE anyptr chiba_arrayqueue_pop(chiba_arrayqueue *queue) {
+UTILS anyptr chiba_arrayqueue_pop(chiba_arrayqueue *queue) {
   chiba_backoff backoff = {.step = 0};
   u64 head = atomic_load_explicit(&queue->head, memory_order_relaxed);
 
@@ -250,7 +250,7 @@ UTILS u64 chiba_arrayqueue_capacity(const chiba_arrayqueue *queue) {
 }
 
 // Returns true if the queue is empty
-PRIVATE bool chiba_arrayqueue_is_empty(const chiba_arrayqueue *queue) {
+UTILS bool chiba_arrayqueue_is_empty(const chiba_arrayqueue *queue) {
   u64 head =
       atomic_load_explicit((atomic_u64 *)&queue->head, memory_order_seq_cst);
   u64 tail =
@@ -259,7 +259,7 @@ PRIVATE bool chiba_arrayqueue_is_empty(const chiba_arrayqueue *queue) {
 }
 
 // Returns true if the queue is full
-PRIVATE bool chiba_arrayqueue_is_full(const chiba_arrayqueue *queue) {
+UTILS bool chiba_arrayqueue_is_full(const chiba_arrayqueue *queue) {
   u64 tail =
       atomic_load_explicit((atomic_u64 *)&queue->tail, memory_order_seq_cst);
   u64 head =
@@ -268,7 +268,7 @@ PRIVATE bool chiba_arrayqueue_is_full(const chiba_arrayqueue *queue) {
 }
 
 // Returns the number of elements in the queue
-PRIVATE u64 chiba_arrayqueue_size(const chiba_arrayqueue *queue) {
+UTILS u64 chiba_arrayqueue_size(const chiba_arrayqueue *queue) {
   while (1) {
     // Load the tail, then load the head
     u64 tail =
@@ -297,7 +297,7 @@ PRIVATE u64 chiba_arrayqueue_size(const chiba_arrayqueue *queue) {
 
 // Destroys the queue and frees all allocated memory
 // Note: Does not free the contained pointers - caller must handle that
-PRIVATE void chiba_arrayqueue_drop(chiba_arrayqueue *queue) {
+UTILS void chiba_arrayqueue_drop(chiba_arrayqueue *queue) {
   if (!queue)
     return;
   CHIBA_INTERNAL_free(queue->buffer);

@@ -1,24 +1,11 @@
 #include "thread_pool.h"
-#include "../utils/backoff.h"
-#include <pthread.h>
-#include <sched.h>
-#include <unistd.h>
+#include "../concurrency/dequeue.h"
 
+PRIVATE void threadpool_execute_task(ThreadPoolWorker *worker,
+                                     ThreadPoolTask *task);
 //////////////////////////////////////////////////////////////////////////////////
 // 辅助函数
 //////////////////////////////////////////////////////////////////////////////////
-
-// 获取系统 CPU 核心数
-PRIVATE int threadpool_get_cpu_count(void) {
-#if defined(_WIN32) || defined(_WIN64)
-  SYSTEM_INFO sysinfo;
-  GetSystemInfo(&sysinfo);
-  return sysinfo.dwNumberOfProcessors < 4 ? 4 : sysinfo.dwNumberOfProcessors;
-#else
-  long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-  return (nprocs > 0) ? (int)nprocs : 4;
-#endif
-}
 
 //////////////////////////////////////////////////////////////////////////////////
 // Worker 线程主循环
@@ -33,8 +20,8 @@ PRIVATE void *threadpool_worker_main(void *arg) {
   while (atomic_load(&worker->running)) {
     ThreadPoolTask *task = NULL;
 
-    // 1. 尝试从本地队列 pop 任务
-    anyptr task_ptr = chiba_wsqueue_pop(pool->blocking_queue);
+    // 1. 尝试从全局队列窃取任务 (worker 不是队列拥有者)
+    anyptr task_ptr = chiba_wsqueue_steal(pool->blocking_queue);
     if (task_ptr != NULL) {
       task = (ThreadPoolTask *)task_ptr;
       atomic_store(&worker->idle, false);
@@ -46,9 +33,9 @@ PRIVATE void *threadpool_worker_main(void *arg) {
       atomic_fetch_add(&pool->idle_workers, 1);
 
       pthread_mutex_lock(&worker->wakeup_mutex);
-      // 再次检查，避免丢失唤醒信号
-      if (atomic_load(&pool->total_tasks_pending) == 0 &&
-          atomic_load(&worker->running)) {
+      // 循环等待直到有任务或线程应该停止
+      while (atomic_load(&pool->total_tasks_pending) == 0 &&
+             atomic_load(&worker->running)) {
         pthread_cond_wait(&worker->wakeup_cond, &worker->wakeup_mutex);
       }
       pthread_mutex_unlock(&worker->wakeup_mutex);
@@ -71,21 +58,26 @@ PRIVATE void *threadpool_worker_main(void *arg) {
 
 PRIVATE void threadpool_execute_task(ThreadPoolWorker *worker,
                                      ThreadPoolTask *task) {
-  if (!task || !task->func || !task->future) {
-    if (task) {
-      CHIBA_INTERNAL_free(task);
-    }
+  if (!task) {
     return;
   }
 
-  chiba_future *future = task->future;
+  chiba_shared_ptr ptr = task->future;
+  chiba_future *future = (chiba_future *)chiba_shared_get(&ptr);
+  if (!task->func || !future) {
+    atomic_fetch_sub(&worker->pool->total_tasks_pending, 1);
+    chiba_shared_drop(&task->future);
+    CHIBA_INTERNAL_free(task);
+    return;
+  }
 
   // 检查是否已取消
-  if (chiba_future_is_cancelled(future)) {
+  if (chiba_future_is_cancelled(ptr)) {
     atomic_store(&future->state, FUTURE_CANCELLED);
     atomic_store(&future->error, FUTURE_ERR_CANCELLED);
-    CHIBA_INTERNAL_free(task);
     atomic_fetch_sub(&worker->pool->total_tasks_pending, 1);
+    chiba_shared_drop(&task->future);
+    CHIBA_INTERNAL_free(task);
     return;
   }
 
@@ -94,23 +86,22 @@ PRIVATE void threadpool_execute_task(ThreadPoolWorker *worker,
   future->worker_tid = pthread_self();
 
   // 执行任务函数
-  anyptr result = task->func(task->arg, future);
+  anyptr result = task->func(task->arg, ptr);
 
   // 更新 future 状态
-  if (chiba_future_is_cancelled(future)) {
+  if (chiba_future_is_cancelled(ptr)) {
     atomic_store(&future->state, FUTURE_CANCELLED);
     atomic_store(&future->error, FUTURE_ERR_CANCELLED);
   } else {
     atomic_store(&future->result, result);
     atomic_store(&future->state, FUTURE_COMPLETED);
     atomic_store(&future->error, FUTURE_ERR_OK);
+    atomic_fetch_add(&worker->pool->total_tasks_completed, 1);
   }
 
-  // 更新统计信息
+  // 更新统计信息并释放资源
   atomic_fetch_sub(&worker->pool->total_tasks_pending, 1);
-  atomic_fetch_add(&worker->pool->total_tasks_completed, 1);
-
-  // 释放任务内存
+  chiba_shared_drop(&task->future);
   CHIBA_INTERNAL_free(task);
 }
 
@@ -124,7 +115,7 @@ PUBLIC ThreadPool *threadpool_create() {
     return NULL;
 
   // 获取 CPU 核心数
-  i32 cpu_count = threadpool_get_cpu_count();
+  i32 cpu_count = get_cpu_count();
   pool->num_workers = cpu_count;
 
   // 初始化队列 (容量 65536)
@@ -203,7 +194,8 @@ PUBLIC void threadpool_destroy(ThreadPool **pool_ptr) {
     for (i32 i = 0; i < pool->num_workers; i++) {
       pthread_cond_signal(&pool->workers[i].wakeup_cond);
     }
-    usleep(1000); // 等待 1ms
+    chiba_backoff b;
+    backoff_snooze(&b);
   }
 
   // 停止所有 worker 线程
@@ -211,9 +203,11 @@ PUBLIC void threadpool_destroy(ThreadPool **pool_ptr) {
     atomic_store(&pool->workers[i].running, false);
   }
 
-  // 唤醒所有等待的线程
+  // 唤醒所有等待的线程 (使用 broadcast 确保所有线程都被唤醒)
   for (i32 i = 0; i < pool->num_workers; i++) {
-    pthread_cond_signal(&pool->workers[i].wakeup_cond);
+    pthread_mutex_lock(&pool->workers[i].wakeup_mutex);
+    pthread_cond_broadcast(&pool->workers[i].wakeup_cond);
+    pthread_mutex_unlock(&pool->workers[i].wakeup_mutex);
   }
 
   // 等待所有线程退出
@@ -235,48 +229,61 @@ PUBLIC void threadpool_destroy(ThreadPool **pool_ptr) {
 // 任务提交
 //////////////////////////////////////////////////////////////////////////////////
 
-PUBLIC chiba_future *
-threadpool_submit_blocking_task(ThreadPool *pool, TaskFunc func, anyptr arg) {
-  if (!pool || !func)
-    return NULL;
+PUBLIC chiba_shared_ptr_param(chiba_future)
+    threadpool_submit_blocking_task(ThreadPool *pool, TaskFunc func,
+                                    anyptr arg) {
+  if (!pool || !func) {
+    return chiba_shared_null();
+  }
 
   // 检查线程池是否正在关闭
   if (atomic_load(&pool->shutting_down)) {
-    return NULL;
+    return chiba_shared_null();
   }
 
   // 创建 future
-  chiba_future *future = chiba_future_init();
-  if (!future)
-    return NULL;
+  chiba_shared_ptr future = chiba_future_init();
+  if (!future.control) {
+    return chiba_shared_null();
+  }
 
   // 创建任务
   ThreadPoolTask *task =
       (ThreadPoolTask *)CHIBA_INTERNAL_malloc(sizeof(ThreadPoolTask));
+
   if (!task) {
-    chiba_future_drop(&future);
-    return NULL;
+    chiba_shared_drop(&future);
+    return chiba_shared_null();
   }
 
   task->func = func;
   task->arg = arg;
-  task->future = future;
+  task->future = chiba_shared_clone(&future);
+
+  if (chiba_shared_ptr_is_null(&task->future)) {
+    CHIBA_INTERNAL_free(task);
+    chiba_shared_drop(&future);
+    return chiba_shared_null();
+  }
 
   // 提交任务到队列
   if (!chiba_wsqueue_push(pool->blocking_queue, (anyptr)task, true)) {
+    chiba_shared_drop(&task->future);
     CHIBA_INTERNAL_free(task);
-    chiba_future_drop(&future);
-    return NULL;
+    chiba_shared_drop(&future);
+    return chiba_shared_null();
   }
 
   // 更新统计信息
   atomic_fetch_add(&pool->total_tasks_pending, 1);
 
-  // 唤醒一个空闲线程（简单轮询策略）
+  // 唤醒一个空闲线程（需要持有锁以避免丢失信号）
   if (atomic_load(&pool->idle_workers) > 0) {
     for (i32 i = 0; i < pool->num_workers; i++) {
       if (atomic_load(&pool->workers[i].idle)) {
+        pthread_mutex_lock(&pool->workers[i].wakeup_mutex);
         pthread_cond_signal(&pool->workers[i].wakeup_cond);
+        pthread_mutex_unlock(&pool->workers[i].wakeup_mutex);
         break;
       }
     }
@@ -298,24 +305,4 @@ PUBLIC threadpool_stats get_threadpool_stats(ThreadPool *pool) {
   stats.idle_workers = atomic_load(&pool->idle_workers);
 
   return stats;
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-// Future 等待其他 Future
-//////////////////////////////////////////////////////////////////////////////////
-
-PUBLIC void threadpool_await_other_future(chiba_future *self_future,
-                                          chiba_future *future) {
-  if (!self_future || !future)
-    return;
-
-  // 轮询等待，同时检查自己是否被取消
-  while (!chiba_future_is_done(future)) {
-    if (chiba_future_is_cancelled(self_future)) {
-      chiba_future_cancel(future);
-      return;
-    }
-    chiba_backoff backoff = {.step = 0};
-    backoff_snooze(&backoff);
-  }
 }

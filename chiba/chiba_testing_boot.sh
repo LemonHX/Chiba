@@ -51,17 +51,8 @@ for i in "${!TEST_FILES[@]}"; do
     echo -e "${YELLOW}Running ${TEST_NAME}.test...${NC}"
     if [ "$USE_VALGRIND" = true ]; then
         # Capture valgrind output
-        VALGRIND_OUTPUT=$(mktemp)
-        valgrind $VALGRIND_FLAGS ./"$TEST_BINARY" 2>&1 | tee "$VALGRIND_OUTPUT"
-        RESULT=${PIPESTATUS[0]}
-        
-        # Check if valgrind failed to start
-        if grep -q "Fatal error at startup" "$VALGRIND_OUTPUT"; then
-            echo -e "${YELLOW}⚠ Valgrind failed (install libc6-dbg for full checks), running without it...${NC}"
-            ./"$TEST_BINARY"
-            RESULT=$?
-        fi
-        rm -f "$VALGRIND_OUTPUT"
+        valgrind $VALGRIND_FLAGS ./"$TEST_BINARY"
+        RESULT=$?
     else
         ./"$TEST_BINARY"
         RESULT=$?

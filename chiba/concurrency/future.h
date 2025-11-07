@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../arc/arc.h"
 #include "../basic_memory.h"
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -32,8 +33,6 @@ typedef struct chiba_future {
   _Atomic(FutureError) error;
   _Atomic(anyptr) result;
 
-  // 引用计数 (用于自动释放)
-  _Atomic(i64) refcount;
   // 任务执行的线程 ID (用于检测线程挂掉)
   pthread_t worker_tid;
 
@@ -43,59 +42,29 @@ typedef struct chiba_future {
 // Future API
 //////////////////////////////////////////////////////////////////////////////////
 
-UTILS chiba_future *chiba_future_init(void) {
-  chiba_future *future =
-      (chiba_future *)CHIBA_INTERNAL_malloc(sizeof(chiba_future));
-  if (!future)
-    return NULL;
-
+UTILS void _chiba_future_init(anyptr self, anyptr args) {
+  (void)args;
+  chiba_future *future = (chiba_future *)self;
   atomic_init(&future->state, FUTURE_PENDING);
   atomic_init(&future->error, FUTURE_ERR_OK);
   atomic_init(&future->result, NULL);
-  atomic_init(&future->refcount, 1);
   future->worker_tid = 0;
+}
 
-  return future;
+UTILS chiba_shared_ptr_param(chiba_future) chiba_future_init() {
+  return chiba_shared_new(sizeof(chiba_future), NULL, _chiba_future_init, NULL);
 }
 
 // ========== PUBLIC API ==========
-
-/**
- * 克隆 future
- */
-UTILS chiba_future *chiba_future_clone(chiba_future *future) {
-  if (!future)
-    return NULL;
-  atomic_fetch_add(&future->refcount, 1);
-  return future;
-}
-
-/**
- * 减少 future 引用计数,为 0 时释放, 用于defer
- */
-UTILS void chiba_future_unref(chiba_future *future) {
-  if (!future)
-    return;
-
-  if (atomic_fetch_sub(&future->refcount, 1) == 1) {
-    CHIBA_INTERNAL_free(future);
-  }
-}
-
-UTILS void chiba_future_drop(chiba_future **future) {
-  if (!future || !*future)
-    return;
-
-  chiba_future_unref(*future);
-  *future = NULL;
-}
 
 /**
  * 尝试获取 future 结果 (非阻塞)
  * @param result_out 输出结果指针
  * @return true 已完成且有结果, false 未完成或出错
  */
-UTILS bool chiba_future_try_get(chiba_future *future, anyptr *result_out) {
+UTILS bool chiba_future_try_get(chiba_shared_ptr_param(chiba_future) ptr,
+                                anyptr *result_out) {
+  chiba_future *future = (chiba_future *)chiba_shared_get(&ptr);
   if (!future || !result_out)
     return false;
 
@@ -112,7 +81,8 @@ UTILS bool chiba_future_try_get(chiba_future *future, anyptr *result_out) {
  * 请求取消任务
  * 注意: 只是设置取消标志,任务函数需要主动检查
  */
-UTILS void chiba_future_cancel(chiba_future *future) {
+UTILS void chiba_future_cancel(chiba_shared_ptr_param(chiba_future) ptr) {
+  chiba_future *future = (chiba_future *)chiba_shared_get(&ptr);
   if (!future)
     return;
 
@@ -122,7 +92,8 @@ UTILS void chiba_future_cancel(chiba_future *future) {
 /**
  * 检查任务是否被取消 (任务函数内调用)
  */
-UTILS bool chiba_future_is_cancelled(chiba_future *future) {
+UTILS bool chiba_future_is_cancelled(chiba_shared_ptr_param(chiba_future) ptr) {
+  chiba_future *future = (chiba_future *)chiba_shared_get(&ptr);
   if (!future)
     return false;
 
@@ -132,7 +103,8 @@ UTILS bool chiba_future_is_cancelled(chiba_future *future) {
 /**
  * 获取 future 状态
  */
-UTILS FutureState chiba_future_state(chiba_future *future) {
+UTILS FutureState chiba_future_state(chiba_shared_ptr_param(chiba_future) ptr) {
+  chiba_future *future = (chiba_future *)chiba_shared_get(&ptr);
   if (!future)
     return FUTURE_PENDING;
 
@@ -142,7 +114,8 @@ UTILS FutureState chiba_future_state(chiba_future *future) {
 /**
  * 获取 future 错误码
  */
-UTILS FutureError chiba_future_error(chiba_future *future) {
+UTILS FutureError chiba_future_error(chiba_shared_ptr_param(chiba_future) ptr) {
+  chiba_future *future = (chiba_future *)chiba_shared_get(&ptr);
   if (!future)
     return FUTURE_ERR_OK;
 
@@ -152,7 +125,8 @@ UTILS FutureError chiba_future_error(chiba_future *future) {
 /**
  * 判断 future 是否完成 (成功或失败)
  */
-UTILS bool chiba_future_is_done(chiba_future *future) {
+UTILS bool chiba_future_is_done(chiba_shared_ptr_param(chiba_future) ptr) {
+  chiba_future *future = (chiba_future *)chiba_shared_get(&ptr);
   if (!future)
     return false;
 

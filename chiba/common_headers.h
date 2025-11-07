@@ -75,3 +75,26 @@
 
 #define BEFORE_START __attribute__((constructor)) static
 #define AFTER_END __attribute__((destructor)) static
+
+// 获取系统 CPU 核心数
+UTILS int get_cpu_count(void) {
+#if defined(_WIN32) || defined(_WIN64)
+  SYSTEM_INFO sysinfo;
+  GetSystemInfo(&sysinfo);
+  return sysinfo.dwNumberOfProcessors < 1 ? 1 : sysinfo.dwNumberOfProcessors;
+#else
+  long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+  return (nprocs > 0) ? (int)nprocs : 1;
+#endif
+}
+
+UTILS void CHIBA_INTERNAL_usleep(long long microseconds) {
+#if defined(_WIN32) || defined(_WIN64)
+  Sleep((DWORD)(microseconds / 1000));
+#else
+  struct timespec req, rem;
+  req.tv_sec = microseconds / 1000000;
+  req.tv_nsec = (microseconds % 1000000) * 1000;
+  nanosleep(&req, &rem);
+#endif
+}

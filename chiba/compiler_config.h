@@ -25,8 +25,6 @@
 
 #define API_MAX_STACK_USAGE 1024 * 1024 /* 1MB */
 
-#define PRESTART_POST_REGISTER_CALLBACK_SIZE 65535
-
 // please change if you are using risv64 and using 39 bits virtual address space
 #define PTR_BIT 48
 

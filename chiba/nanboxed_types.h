@@ -40,7 +40,7 @@ typedef union chiba_nanbox {
   chiba_nanboxed_ptr ptr;
 } chiba_nanbox;
 
-UTILS bool CHIBA_assert_is_nanbox(f64 f64) {
+UTILS bool chiba_assert_is_nanbox(f64 f64) {
   chiba_nanbox box;
   box.f64 = f64;
   u64 raw = box.abi;
@@ -58,12 +58,12 @@ UTILS bool CHIBA_assert_is_nanbox(f64 f64) {
 UTILS u8 chiba_nanbox_get_tag(f64 f64) {
   chiba_nanbox box;
   box.f64 = f64;
-  if (likely(CHIBA_assert_is_nanbox(f64))) {
+  if (likely(chiba_assert_is_nanbox(f64))) {
     return box.layout.tag;
   }
   return TAG_INVALID;
 }
-UTILS u64 CHIBA_ptr_to_nanbox(anyptr ptr) {
+UTILS u64 chiba_ptr_to_nanbox(anyptr ptr) {
   chiba_nanbox box;
   box.abi = 0;
   box.layout.exponent = 0x7FF;  // Set exponent to all 1s for NaN
@@ -74,10 +74,10 @@ UTILS u64 CHIBA_ptr_to_nanbox(anyptr ptr) {
   return box.abi;
 }
 
-UTILS anyptr chiba_nanbox_to_ptr(f64 f64) {
+UTILS anyptr chiba_nanbox_to_ptr(u64 f64) {
   chiba_nanbox box;
   box.f64 = f64;
-  if (likely(CHIBA_assert_is_nanbox(f64))) {
+  if (likely(chiba_assert_is_nanbox(f64))) {
     if (likely(box.layout.tag == TAG_address)) {
       return (anyptr)box.layout.payload;
     }
