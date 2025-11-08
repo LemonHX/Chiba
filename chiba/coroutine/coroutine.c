@@ -11,7 +11,7 @@ NOINLINE PRIVATE void chiba_co_exit(void) __attribute__((noreturn));
 PRIVATE void chiba_co_exit(void) { _Exit(0); }
 
 // Coroutine structure
-struct chiba_co {
+typedef struct chiba_co {
   struct chiba_co_desc desc;
 #if defined(CHIBA_CO_STACKJMP)
   jmp_buf buf;
@@ -23,7 +23,7 @@ struct chiba_co {
 #elif defined(CHIBA_CO_WASM)
   emscripten_fiber_t fiber;
 #endif
-};
+} chiba_co;
 
 PRIVATE THREAD_LOCAL struct chiba_co chiba_co_thread = {0};
 PRIVATE THREAD_LOCAL struct chiba_co *chiba_co_cur = NULL;

@@ -5,9 +5,9 @@
 typedef struct chiba_sco_desc {
   anyptr stack;
   i64 stack_size;
-  void (*entry)(anyptr udata);
-  void (*cleanup)(anyptr stack, i64 stack_size, anyptr udata);
-  anyptr udata;
+  void (*entry)(anyptr ctx);
+  void (*defer)(anyptr stack, u64 stack_size, anyptr ctx);
+  anyptr ctx;
 } chiba_sco_desc;
 
 typedef i64 chiba_sco_id_t;
@@ -60,7 +60,7 @@ void chiba_sco_attach(chiba_sco_id_t id);
 void chiba_sco_exit(void);
 
 // Returns the user data of the currently running coroutine.
-anyptr chiba_sco_udata(void);
+anyptr chiba_sco_ctx(void);
 
 typedef struct chiba_sco_info {
   i64 scheduled;

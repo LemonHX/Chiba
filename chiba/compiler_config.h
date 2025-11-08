@@ -47,3 +47,5 @@
 
 #define CHIBA_BINARY
 // #define CHIBA_LIB
+
+#define CHIBA_SCO_NSHARDS 512
