@@ -21,7 +21,7 @@
 #include <ucontext.h>
 
 // Ucontext context structure - stores per-coroutine state
-struct CHIBA_co_uctx {
+struct chiba_co_uctx {
   ucontext_t ucallee;
   i32 initialized;
 };
@@ -33,30 +33,30 @@ struct CHIBA_co_uctx {
 // function. This is a behavior that can be observed on Mac OS with
 // Apple Silicon. This "trick" can be optionally removed at the expense
 // of slower initial jumping into large stacks.
-enum CHIBA_co_stack_grows { DOWNWARDS, UPWARDS };
+enum chiba_co_stack_grows { DOWNWARDS, UPWARDS };
 
-PRIVATE enum CHIBA_co_stack_grows CHIBA_co_stack_grows0(i32 *addr0) {
+PRIVATE enum chiba_co_stack_grows chiba_co_stack_grows0(i32 *addr0) {
   i32 addr1;
   return addr0 < &addr1 ? UPWARDS : DOWNWARDS;
 }
 
-PRIVATE enum CHIBA_co_stack_grows CHIBA_co_stack_grows(void) {
+PRIVATE enum chiba_co_stack_grows chiba_co_stack_grows(void) {
   i32 addr0;
-  return CHIBA_co_stack_grows0(&addr0);
+  return chiba_co_stack_grows0(&addr0);
 }
 
-PRIVATE void CHIBA_co_adjust_ucontext_stack(ucontext_t *ucp) {
-  if (CHIBA_co_stack_grows() == UPWARDS) {
+PRIVATE void chiba_co_adjust_ucontext_stack(ucontext_t *ucp) {
+  if (chiba_co_stack_grows() == UPWARDS) {
     ucp->uc_stack.ss_sp = (i8 *)ucp->uc_stack.ss_sp + ucp->uc_stack.ss_size;
     ucp->uc_stack.ss_size = 0;
   }
 }
 #else
-#define CHIBA_co_adjust_ucontext_stack(ucp)
+#define chiba_co_adjust_ucontext_stack(ucp)
 #endif
 
 // Initialize a ucontext context structure
-PRIVATE void CHIBA_co_uctx_make(struct CHIBA_co_uctx *ctx, anyptr stack_base,
+PRIVATE void chiba_co_uctx_make(struct chiba_co_uctx *ctx, anyptr stack_base,
                                 u64 stack_size, void (*entry)(anyptr arg)) {
   if (!ctx->initialized) {
     ctx->initialized = 1;
@@ -64,20 +64,20 @@ PRIVATE void CHIBA_co_uctx_make(struct CHIBA_co_uctx *ctx, anyptr stack_base,
   }
   ctx->ucallee.uc_stack.ss_sp = stack_base;
   ctx->ucallee.uc_stack.ss_size = stack_size;
-  CHIBA_co_adjust_ucontext_stack(&ctx->ucallee);
+  chiba_co_adjust_ucontext_stack(&ctx->ucallee);
   makecontext(&ctx->ucallee, (void (*)(void))entry, 0);
 }
 
 // Ucontext always uses stackjmp with setjmp/longjmp, instead of swapcontext
 // because it's much faster.
-NOINLINE PRIVATE void CHIBA_co_stackjmp(struct CHIBA_co_uctx *ctx, anyptr stack,
+NOINLINE PRIVATE void chiba_co_stackjmp(struct chiba_co_uctx *ctx, anyptr stack,
                                         u64 stack_size,
                                         void (*entry)(anyptr arg))
     __attribute__((noreturn));
 
-PRIVATE void CHIBA_co_stackjmp(struct CHIBA_co_uctx *ctx, anyptr stack,
+PRIVATE void chiba_co_stackjmp(struct chiba_co_uctx *ctx, anyptr stack,
                                u64 stack_size, void (*entry)(anyptr arg)) {
-  CHIBA_co_uctx_make(ctx, stack, stack_size, entry);
+  chiba_co_uctx_make(ctx, stack, stack_size, entry);
   setcontext(&ctx->ucallee);
   _Exit(0); // Should never reach here
 }

@@ -9,42 +9,42 @@
 #define CHIBA_CO_READY
 #define CHIBA_CO_METHOD "asm,x64_sysv"
 
-NOINLINE PRIVATE void CHIBA_co_entry(anyptr arg) __attribute__((noreturn));
+NOINLINE PRIVATE void chiba_co_entry(anyptr arg) __attribute__((noreturn));
 
-struct CHIBA_co_asmctx {
+struct chiba_co_asmctx {
   anyptr rip, rsp, rbp, rbx, r12, r13, r14, r15;
 };
 
-void _CHIBA_co_asm_entry(void);
-i32 _CHIBA_co_asm_switch(struct CHIBA_co_asmctx *from,
-                         struct CHIBA_co_asmctx *to);
+void _chiba_co_asm_entry(void);
+i32 _chiba_co_asm_switch(struct chiba_co_asmctx *from,
+                         struct chiba_co_asmctx *to);
 
 __asm__(".text\n"
 #ifdef __MACH__ /* Mac OS X assembler */
-        ".globl __CHIBA_co_asm_entry\n"
-        "__CHIBA_co_asm_entry:\n"
+        ".globl __chiba_co_asm_entry\n"
+        "__chiba_co_asm_entry:\n"
 #else /* Linux assembler */
-        ".globl _CHIBA_co_asm_entry\n"
-        ".type _CHIBA_co_asm_entry @function\n"
-        ".hidden _CHIBA_co_asm_entry\n"
-        "_CHIBA_co_asm_entry:\n"
+        ".globl _chiba_co_asm_entry\n"
+        ".type _chiba_co_asm_entry @function\n"
+        ".hidden _chiba_co_asm_entry\n"
+        "_chiba_co_asm_entry:\n"
 #endif
         "  movq %r13, %rdi\n"
         "  jmpq *%r12\n"
 #ifndef __MACH__
-        ".size _CHIBA_co_asm_entry, .-_CHIBA_co_asm_entry\n"
+        ".size _chiba_co_asm_entry, .-_chiba_co_asm_entry\n"
 #endif
 );
 
 __asm__(".text\n"
 #ifdef __MACH__ /* Mac OS assembler */
-        ".globl __CHIBA_co_asm_switch\n"
-        "__CHIBA_co_asm_switch:\n"
+        ".globl __chiba_co_asm_switch\n"
+        "__chiba_co_asm_switch:\n"
 #else /* Linux assembler */
-        ".globl _CHIBA_co_asm_switch\n"
-        ".type _CHIBA_co_asm_switch @function\n"
-        ".hidden _CHIBA_co_asm_switch\n"
-        "_CHIBA_co_asm_switch:\n"
+        ".globl _chiba_co_asm_switch\n"
+        ".type _chiba_co_asm_switch @function\n"
+        ".hidden _chiba_co_asm_switch\n"
+        "_chiba_co_asm_switch:\n"
 #endif
         "  leaq 0x3d(%rip), %rax\n"
         "  movq %rax, (%rdi)\n"
@@ -65,12 +65,12 @@ __asm__(".text\n"
         "  jmpq *(%rsi)\n"
         "  ret\n"
 #ifndef __MACH__
-        ".size _CHIBA_co_asm_switch, .-_CHIBA_co_asm_switch\n"
+        ".size _chiba_co_asm_switch, .-_chiba_co_asm_switch\n"
 #endif
 );
 
 // System V x64 implementation (Unix/Linux/macOS)
-PRIVATE void CHIBA_co_asmctx_make(struct CHIBA_co_asmctx *ctx,
+PRIVATE void chiba_co_asmctx_make(struct chiba_co_asmctx *ctx,
                                   anyptr stack_base, u64 stack_size,
                                   anyptr arg) {
   // Reserve 128 bytes for the Red Zone space (System V AMD64 ABI).
@@ -78,9 +78,9 @@ PRIVATE void CHIBA_co_asmctx_make(struct CHIBA_co_asmctx *ctx,
   anyptr *stack_high_ptr =
       (anyptr *)((u64)stack_base + stack_size - sizeof(u64));
   stack_high_ptr[0] = (anyptr)(0xdeaddeaddeaddead); // Dummy return address.
-  ctx->rip = (anyptr)(_CHIBA_co_asm_entry);
+  ctx->rip = (anyptr)(_chiba_co_asm_entry);
   ctx->rsp = (anyptr)(stack_high_ptr);
-  ctx->r12 = (anyptr)(CHIBA_co_entry);
+  ctx->r12 = (anyptr)(chiba_co_entry);
   ctx->r13 = arg;
 }
 

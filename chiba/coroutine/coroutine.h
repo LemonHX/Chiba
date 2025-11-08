@@ -5,7 +5,7 @@
 #include "../basic_types.h"
 
 // Coroutine descriptor for starting new coroutines
-struct CHIBA_co_desc {
+struct chiba_co_desc {
   anyptr stack;
   u64 stack_size;
   void (*entry)(anyptr ctx);
@@ -14,18 +14,18 @@ struct CHIBA_co_desc {
 };
 
 // Opaque coroutine handle
-struct CHIBA_co;
+struct chiba_co;
 
 // Public API
 
 // Get the current coroutine (returns NULL if not in a coroutine)
-PUBLIC struct CHIBA_co *chiba_co_current(void);
+PUBLIC struct chiba_co *chiba_co_current(void);
 
 // Start a new coroutine
-PUBLIC void chiba_co_start(struct CHIBA_co_desc *desc, bool final);
+PUBLIC void chiba_co_start(struct chiba_co_desc *desc, bool final);
 
 // Switch to another coroutine
-PUBLIC void chiba_co_switch(struct CHIBA_co *co, bool final);
+PUBLIC void chiba_co_switch(struct chiba_co *co, bool final);
 
 // Get the coroutine method name (e.g., "asm,aarch64", "ucontext")
 PUBLIC cstr chiba_co_method(anyptr caps);

@@ -7,28 +7,28 @@
 #define CHIBA_CO_ASM
 #define CHIBA_CO_READY
 #define CHIBA_CO_METHOD "asm,aarch64"
-NOINLINE PRIVATE void CHIBA_co_entry(anyptr arg) __attribute__((noreturn));
+NOINLINE PRIVATE void chiba_co_entry(anyptr arg) __attribute__((noreturn));
 
-struct CHIBA_co_asmctx {
+struct chiba_co_asmctx {
   anyptr x[12]; /* x19-x30 */
   anyptr sp;
   anyptr lr;
   anyptr d[8]; /* d8-d15 */
 };
 
-void _CHIBA_co_asm_entry(void);
-i32 _CHIBA_co_asm_switch(struct CHIBA_co_asmctx *from,
-                         struct CHIBA_co_asmctx *to);
+void _chiba_co_asm_entry(void);
+i32 _chiba_co_asm_switch(struct chiba_co_asmctx *from,
+                         struct chiba_co_asmctx *to);
 
 __asm__(".text\n"
 #ifdef __APPLE__
-        ".globl __CHIBA_co_asm_switch\n"
-        "__CHIBA_co_asm_switch:\n"
+        ".globl __chiba_co_asm_switch\n"
+        "__chiba_co_asm_switch:\n"
 #else
-        ".globl _CHIBA_co_asm_switch\n"
-        ".type _CHIBA_co_asm_switch #function\n"
-        ".hidden _CHIBA_co_asm_switch\n"
-        "_CHIBA_co_asm_switch:\n"
+        ".globl _chiba_co_asm_switch\n"
+        ".type _chiba_co_asm_switch #function\n"
+        ".hidden _chiba_co_asm_switch\n"
+        "_chiba_co_asm_switch:\n"
 #endif
 
         "  mov x10, sp\n"
@@ -58,36 +58,36 @@ __asm__(".text\n"
         "  mov sp, x10\n"
         "  br x11\n"
 #ifndef __APPLE__
-        ".size _CHIBA_co_asm_switch, .-_CHIBA_co_asm_switch\n"
+        ".size _chiba_co_asm_switch, .-_chiba_co_asm_switch\n"
 #endif
 );
 
 __asm__(".text\n"
 #ifdef __APPLE__
-        ".globl __CHIBA_co_asm_entry\n"
-        "__CHIBA_co_asm_entry:\n"
+        ".globl __chiba_co_asm_entry\n"
+        "__chiba_co_asm_entry:\n"
 #else
-        ".globl _CHIBA_co_asm_entry\n"
-        ".type _CHIBA_co_asm_entry #function\n"
-        ".hidden _CHIBA_co_asm_entry\n"
-        "_CHIBA_co_asm_entry:\n"
+        ".globl _chiba_co_asm_entry\n"
+        ".type _chiba_co_asm_entry #function\n"
+        ".hidden _chiba_co_asm_entry\n"
+        "_chiba_co_asm_entry:\n"
 #endif
         "  mov x0, x19\n"
         "  mov x30, x21\n"
         "  br x20\n"
 #ifndef __APPLE__
-        ".size _CHIBA_co_asm_entry, .-_CHIBA_co_asm_entry\n"
+        ".size _chiba_co_asm_entry, .-_chiba_co_asm_entry\n"
 #endif
 );
 
-PRIVATE void CHIBA_co_asmctx_make(struct CHIBA_co_asmctx *ctx,
+PRIVATE void chiba_co_asmctx_make(struct chiba_co_asmctx *ctx,
                                   anyptr stack_base, u64 stack_size,
                                   anyptr arg) {
   ctx->x[0] = arg;
-  ctx->x[1] = (anyptr)(CHIBA_co_entry);
+  ctx->x[1] = (anyptr)(chiba_co_entry);
   ctx->x[2] = (anyptr)(0xdeaddeaddeaddead); /* Dummy return address. */
   ctx->sp = (anyptr)((u64)stack_base + stack_size);
-  ctx->lr = (anyptr)(_CHIBA_co_asm_entry);
+  ctx->lr = (anyptr)(_chiba_co_asm_entry);
 }
 
 #endif // __aarch64__

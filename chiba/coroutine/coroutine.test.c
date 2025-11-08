@@ -20,9 +20,9 @@ static char tresult[4096];
 TEST_GROUP(coroutine);
 
 // ---------------- Sequence/cleanup order scenario ----------------
-static struct CHIBA_co *co1 = NULL;
-static struct CHIBA_co *co2 = NULL;
-static struct CHIBA_co *co3 = NULL;
+static struct chiba_co *co1 = NULL;
+static struct chiba_co *co2 = NULL;
+static struct chiba_co *co3 = NULL;
 
 static void test_cleanup(anyptr stk, u64 stksz, anyptr udata) {
   (void)stksz;
@@ -34,7 +34,7 @@ static void test_cleanup(anyptr stk, u64 stksz, anyptr udata) {
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 static int run_invalid_start(anyptr d) {
   (void)d;
-  struct CHIBA_co_desc bad = {0};
+  struct chiba_co_desc bad = {0};
   chiba_co_start(&bad, false);
   return 0;
 }
@@ -74,7 +74,7 @@ TEST_CASE(invalid_params_basic, coroutine, "invalid parameters (skipped)", {
 #endif
 
 // 8. heavy_switch_pressure: large number of switches with minimal work
-static struct CHIBA_co *hs_a = NULL, *hs_b = NULL;
+static struct chiba_co *hs_a = NULL, *hs_b = NULL;
 static long hs_cnt = 0;
 static long hs_target = 1000000;
 static void hs_cleanup(anyptr s, u64 n, anyptr u) {
@@ -105,13 +105,13 @@ TEST_CASE(heavy_switch_pressure, coroutine, "heavy switch pressure test", {
   DESC(heavy_switch_pressure);
   hs_cnt = 0;
   hs_a = hs_b = NULL;
-  struct CHIBA_co_desc a;
+  struct chiba_co_desc a;
   a.stack = CHIBA_INTERNAL_malloc(STKSZ);
   a.stack_size = STKSZ;
   a.entry = hs_entry_a;
   a.defer = hs_cleanup;
   a.ctx = NULL;
-  struct CHIBA_co_desc b;
+  struct chiba_co_desc b;
   b.stack = CHIBA_INTERNAL_malloc(STKSZ);
   b.stack_size = STKSZ;
   b.entry = hs_entry_b;
@@ -134,7 +134,7 @@ static void entry3(anyptr udata) {
 static void entry2(anyptr udata) {
   co2 = chiba_co_current();
   tprintf("(entry %d)\n", (int)(intptr_t)udata);
-  struct CHIBA_co_desc desc = {
+  struct chiba_co_desc desc = {
       .stack = CHIBA_INTERNAL_malloc(STKSZ),
       .stack_size = STKSZ,
       .entry = entry3,
@@ -147,7 +147,7 @@ static void entry2(anyptr udata) {
 static void entry1(anyptr udata) {
   co1 = chiba_co_current();
   tprintf("(entry %d)\n", (int)(intptr_t)udata);
-  struct CHIBA_co_desc desc = {
+  struct chiba_co_desc desc = {
       .stack = CHIBA_INTERNAL_malloc(STKSZ),
       .stack_size = STKSZ,
       .entry = entry2,
@@ -172,7 +172,7 @@ TEST_CASE(
       ASSERT_NULL(chiba_co_current(), "Not in coroutine initially");
       tprintf("(mark A)\n");
 
-      struct CHIBA_co_desc desc; /* avoid designated initializer in macro */
+      struct chiba_co_desc desc; /* avoid designated initializer in macro */
       desc.stack = CHIBA_INTERNAL_malloc(STKSZ);
       desc.stack_size = STKSZ;
       desc.entry = entry1;
@@ -200,7 +200,7 @@ TEST_CASE(
     })
 
 // ---------------- Light performance sanity (reduced switches) ---------------
-static struct CHIBA_co *p1 = NULL, *p2 = NULL;
+static struct chiba_co *p1 = NULL, *p2 = NULL;
 static int pcount = 0;
 static const int PN = 200000; // keep runtime reasonable
 
@@ -235,13 +235,13 @@ TEST_CASE(performance_switching, coroutine, "Light performance sanity", {
   DESC(performance_switching);
   pcount = 0;
   p1 = p2 = NULL;
-  struct CHIBA_co_desc d1; /* avoid designated initializer in macro */
+  struct chiba_co_desc d1; /* avoid designated initializer in macro */
   d1.stack = CHIBA_INTERNAL_malloc(STKSZ);
   d1.stack_size = STKSZ;
   d1.entry = perf1;
   d1.defer = pcleanup;
   d1.ctx = (anyptr)1;
-  struct CHIBA_co_desc d2; /* avoid designated initializer in macro */
+  struct chiba_co_desc d2; /* avoid designated initializer in macro */
   d2.stack = CHIBA_INTERNAL_malloc(STKSZ);
   d2.stack_size = STKSZ;
   d2.entry = perf2;
@@ -266,7 +266,7 @@ TEST_CASE(method_string, coroutine, "co_method returns expected format", {
 })
 
 // 2. current pointer validity: inside coroutine chiba_co_current stable
-static struct CHIBA_co *cur_stable_a = NULL, *cur_stable_b = NULL,
+static struct chiba_co *cur_stable_a = NULL, *cur_stable_b = NULL,
                        *cur_helper = NULL;
 static int cur_phase = 0;
 static void cur_entry_primary(anyptr u) {
@@ -289,13 +289,13 @@ TEST_CASE(current_pointer_validity, coroutine, "current pointer stability", {
   ASSERT_NULL(chiba_co_current(), "outside coroutine null");
   cur_phase = 0;
   cur_stable_a = cur_stable_b = cur_helper = NULL;
-  struct CHIBA_co_desc da;
+  struct chiba_co_desc da;
   da.stack = CHIBA_INTERNAL_malloc(STKSZ);
   da.stack_size = STKSZ;
   da.entry = cur_entry_primary;
   da.defer = pcleanup;
   da.ctx = NULL;
-  struct CHIBA_co_desc db;
+  struct chiba_co_desc db;
   db.stack = CHIBA_INTERNAL_malloc(STKSZ);
   db.stack_size = STKSZ;
   db.entry = cur_entry_helper;
@@ -315,7 +315,7 @@ TEST_CASE(current_pointer_validity, coroutine, "current pointer stability", {
 // exactly once
 static int fs_cleanup_calls = 0;
 static int fs_step = 0;
-static struct CHIBA_co *fs_co = NULL;
+static struct chiba_co *fs_co = NULL;
 static void fs_cleanup(anyptr s, u64 n, anyptr u) {
   (void)n;
   (void)u;
@@ -336,7 +336,7 @@ TEST_CASE(final_switch_cleanup_order, coroutine,
             fs_cleanup_calls = 0;
             fs_step = 0;
             fs_co = NULL;
-            struct CHIBA_co_desc d;
+            struct chiba_co_desc d;
             d.stack = CHIBA_INTERNAL_malloc(STKSZ);
             d.stack_size = STKSZ;
             d.entry = fs_entry;
@@ -352,7 +352,7 @@ TEST_CASE(final_switch_cleanup_order, coroutine,
 // 4. self_final_no_cleanup: calling final switch to same coroutine should not
 // double cleanup
 static int self_final_calls = 0;
-static struct CHIBA_co *self_co = NULL;
+static struct chiba_co *self_co = NULL;
 static void self_cleanup(anyptr s, u64 n, anyptr u) {
   (void)n;
   (void)u;
@@ -372,7 +372,7 @@ TEST_CASE(self_final_no_cleanup, coroutine,
             DESC(self_final_no_cleanup);
             self_final_calls = 0;
             self_co = NULL;
-            struct CHIBA_co_desc d;
+            struct chiba_co_desc d;
             d.stack = CHIBA_INTERNAL_malloc(STKSZ);
             d.stack_size = STKSZ;
             d.entry = self_entry;
@@ -387,8 +387,8 @@ TEST_CASE(self_final_no_cleanup, coroutine,
 // 5. child_final_start_cleans_parent: starting a child with final=true should
 // cleanup parent before child executes entry body in next resume
 static int cf_cleanup_parent = 0, cf_cleanup_child = 0;
-static struct CHIBA_co *cf_parent = NULL;
-static struct CHIBA_co *cf_child = NULL;
+static struct chiba_co *cf_parent = NULL;
+static struct chiba_co *cf_child = NULL;
 static int cf_phase = 0;
 static void cf_parent_cleanup(anyptr s, u64 n, anyptr u) {
   (void)n;
@@ -412,7 +412,7 @@ static void cf_parent_entry(anyptr u) {
   (void)u;
   cf_parent = chiba_co_current();
   cf_phase = 1;
-  struct CHIBA_co_desc d;
+  struct chiba_co_desc d;
   d.stack = CHIBA_INTERNAL_malloc(STKSZ);
   d.stack_size = STKSZ;
   d.entry = cf_child_entry;
@@ -430,7 +430,7 @@ TEST_CASE(child_final_start_cleans_parent, coroutine,
             cf_parent = NULL;
             cf_child = NULL;
             cf_phase = 0;
-            struct CHIBA_co_desc d;
+            struct chiba_co_desc d;
             d.stack = CHIBA_INTERNAL_malloc(STKSZ);
             d.stack_size = STKSZ;
             d.entry = cf_parent_entry;

@@ -8,9 +8,9 @@
 #define CHIBA_CO_ASM
 #define CHIBA_CO_READY
 #define CHIBA_CO_METHOD "asm,x64_windows"
-NOINLINE PRIVATE void CHIBA_co_entry(anyptr arg) __attribute__((noreturn));
+NOINLINE PRIVATE void chiba_co_entry(anyptr arg) __attribute__((noreturn));
 
-struct CHIBA_co_asmctx {
+struct chiba_co_asmctx {
   anyptr rip, rsp, rbp, rbx, r12, r13, r14, r15, rdi, rsi;
   anyptr xmm[20]; /* xmm6, xmm7, xmm8, xmm9, xmm10, xmm11, xmm12, xmm13,
       xmm14, xmm15 */
@@ -27,14 +27,14 @@ struct CHIBA_co_asmctx {
 #pragma section(".text")
 #endif
 
-CHIBA_CO_ASM_BLOB PRIVATE u8 CHIBA_co_wrap_main_code_entry[] = {
+CHIBA_CO_ASM_BLOB PRIVATE u8 chiba_co_wrap_main_code_entry[] = {
     0x4c, 0x89, 0xe9,                                    // mov    %r13,%rcx
     0x41, 0xff, 0xe4,                                    // jmpq   *%r12
     0xc3,                                                // retq
     0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90 // nop
 };
 
-CHIBA_CO_ASM_BLOB PRIVATE u8 CHIBA_co_asm_switch_code[] = {
+CHIBA_CO_ASM_BLOB PRIVATE u8 chiba_co_asm_switch_code[] = {
     0x48, 0x8d, 0x05, 0x3e, 0x01, 0x00, 0x00,       // lea    0x13e(%rip),%rax
     0x48, 0x89, 0x01,                               // mov    %rax,(%rcx)
     0x48, 0x89, 0x61, 0x08,                         // mov    %rsp,0x8(%rcx)
@@ -99,24 +99,24 @@ CHIBA_CO_ASM_BLOB PRIVATE u8 CHIBA_co_asm_switch_code[] = {
     0x90, 0x90,                                     // nop
 };
 
-void (*_CHIBA_co_asm_entry)(void) = (void (*)(void))(anyptr)
-    CHIBA_co_wrap_main_code_entry;
-void (*_CHIBA_co_asm_switch)(struct CHIBA_co_asmctx *from,
-                             struct CHIBA_co_asmctx *to) =
-    (void (*)(struct CHIBA_co_asmctx *from,
-              struct CHIBA_co_asmctx *to))(anyptr)CHIBA_co_asm_switch_code;
+void (*_chiba_co_asm_entry)(void) = (void (*)(void))(anyptr)
+    chiba_co_wrap_main_code_entry;
+void (*_chiba_co_asm_switch)(struct chiba_co_asmctx *from,
+                             struct chiba_co_asmctx *to) =
+    (void (*)(struct chiba_co_asmctx *from,
+              struct chiba_co_asmctx *to))(anyptr)chiba_co_asm_switch_code;
 
 // Windows x64 implementation
-PRIVATE void CHIBA_co_asmctx_make(struct CHIBA_co_asmctx *ctx,
+PRIVATE void chiba_co_asmctx_make(struct chiba_co_asmctx *ctx,
                                   anyptr stack_base, u64 stack_size,
                                   anyptr arg) {
   stack_size = stack_size - 32; // Reserve 32 bytes for the shadow space.
   anyptr *stack_high_ptr =
       (anyptr *)((u64)stack_base + stack_size - sizeof(u64));
   stack_high_ptr[0] = (anyptr)(0xdeaddeaddeaddead); // Dummy return address.
-  ctx->rip = (anyptr)(_CHIBA_co_asm_entry);
+  ctx->rip = (anyptr)(_chiba_co_asm_entry);
   ctx->rsp = (anyptr)(stack_high_ptr);
-  ctx->r12 = (anyptr)(CHIBA_co_entry);
+  ctx->r12 = (anyptr)(chiba_co_entry);
   ctx->r13 = arg;
   anyptr stack_top = (anyptr)((u64)stack_base + stack_size);
   ctx->stack_base = stack_top;

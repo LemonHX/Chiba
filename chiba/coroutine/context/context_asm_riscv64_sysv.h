@@ -7,9 +7,9 @@
 #define CHIBA_CO_ASM
 #define CHIBA_CO_READY
 #define CHIBA_CO_METHOD "asm,riscv64"
-NOINLINE PRIVATE void CHIBA_co_entry(anyptr arg) __attribute__((noreturn));
+NOINLINE PRIVATE void chiba_co_entry(anyptr arg) __attribute__((noreturn));
 
-struct CHIBA_co_asmctx {
+struct chiba_co_asmctx {
   anyptr s[12]; /* s0-s11 */
   anyptr ra;
   anyptr pc;
@@ -21,24 +21,24 @@ struct CHIBA_co_asmctx {
 #endif /* __riscv_flen */
 };
 
-void _CHIBA_co_asm_entry(void);
-i32 _CHIBA_co_asm_switch(struct CHIBA_co_asmctx *from,
-                         struct CHIBA_co_asmctx *to);
+void _chiba_co_asm_entry(void);
+i32 _chiba_co_asm_switch(struct chiba_co_asmctx *from,
+                         struct chiba_co_asmctx *to);
 
 __asm__(".text\n"
-        ".globl _CHIBA_co_asm_entry\n"
-        ".type _CHIBA_co_asm_entry @function\n"
-        ".hidden _CHIBA_co_asm_entry\n"
-        "_CHIBA_co_asm_entry:\n"
+        ".globl _chiba_co_asm_entry\n"
+        ".type _chiba_co_asm_entry @function\n"
+        ".hidden _chiba_co_asm_entry\n"
+        "_chiba_co_asm_entry:\n"
         "  mv a0, s0\n"
         "  jr s1\n"
-        ".size _CHIBA_co_asm_entry, .-_CHIBA_co_asm_entry\n");
+        ".size _chiba_co_asm_entry, .-_chiba_co_asm_entry\n");
 
 __asm__(".text\n"
-        ".globl _CHIBA_co_asm_switch\n"
-        ".type _CHIBA_co_asm_switch @function\n"
-        ".hidden _CHIBA_co_asm_switch\n"
-        "_CHIBA_co_asm_switch:\n"
+        ".globl _chiba_co_asm_switch\n"
+        ".type _chiba_co_asm_switch @function\n"
+        ".hidden _chiba_co_asm_switch\n"
+        "_chiba_co_asm_switch:\n"
         "  sd s0, 0x00(a0)\n"
         "  sd s1, 0x08(a0)\n"
         "  sd s2, 0x10(a0)\n"
@@ -98,15 +98,15 @@ __asm__(".text\n"
         "  ld a2, 0x68(a1)\n" /* pc */
         "  ld sp, 0x70(a1)\n"
         "  jr a2\n"
-        ".size _CHIBA_co_asm_switch, .-_CHIBA_co_asm_switch\n");
+        ".size _chiba_co_asm_switch, .-_chiba_co_asm_switch\n");
 
 // RISC-V 64-bit implementation
-PRIVATE void CHIBA_co_asmctx_make(struct CHIBA_co_asmctx *ctx,
+PRIVATE void chiba_co_asmctx_make(struct chiba_co_asmctx *ctx,
                                   anyptr stack_base, u64 stack_size,
                                   anyptr arg) {
   ctx->s[0] = arg;
-  ctx->s[1] = (anyptr)(CHIBA_co_entry);
-  ctx->pc = (anyptr)(_CHIBA_co_asm_entry);
+  ctx->s[1] = (anyptr)(chiba_co_entry);
+  ctx->pc = (anyptr)(_chiba_co_asm_entry);
   ctx->ra = (anyptr)(0xdeaddeaddeaddead);
   ctx->sp = (anyptr)((u64)stack_base + stack_size);
 }
