@@ -14,6 +14,7 @@
 #define true 1
 #define false 0
 #define bool u8
+
 typedef unsigned char u8;
 typedef u8 bool;
 typedef unsigned short u16;

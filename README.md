@@ -1,5 +1,13 @@
 # Chiba Runtime
 
+## testing
+
+require valgrind for memory leak checking
+
+### mac
+install follow these instructions https://github.com/LouisBrunner/valgrind-macos
+**requires macos 26 tahoe or later**
+
 ## Needing Contributers for
 
 - [ ] aarch64 windows `ASM` fiber impl

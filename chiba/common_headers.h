@@ -24,18 +24,20 @@
 #include <windows.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+#endif
+
 // threading
-#if !defined(_WIN32) && !defined(EMSCRIPTEN) && !defined(__wasi__)
-#include <errno.h>
-#include <pthread.h>
-#endif
 #if !defined(_WIN32)
+#include <errno.h>
 #include <limits.h>
+#include <pthread.h>
 #include <unistd.h>
-#endif
-#if defined(_WIN32)
+#elif defined(_WIN32)
 #include "../third_party/pthread-win32/pthread.h"
 #endif
+
 #include <stdatomic.h>
 #define CHIBA_IOCPU_POOL
 #include <stdalign.h>
@@ -91,10 +93,21 @@ UTILS int get_cpu_count(void) {
 UTILS void CHIBA_INTERNAL_usleep(long long microseconds) {
 #if defined(_WIN32) || defined(_WIN64)
   Sleep((DWORD)(microseconds / 1000));
-#else
+#elif !defined(__EMSCRIPTEN__)
   struct timespec req, rem;
   req.tv_sec = microseconds / 1000000;
   req.tv_nsec = (microseconds % 1000000) * 1000;
   nanosleep(&req, &rem);
+#else
+  emscripten_sleep((int)(microseconds / 1000));
 #endif
+}
+
+UTILS unsigned long long CHIBA_HASH_mix13(unsigned long long key) {
+  key ^= (key >> 30);
+  key *= 0xbf58476d1ce4e5b9ULL;
+  key ^= (key >> 27);
+  key *= 0x94d049bb133111ebULL;
+  key ^= (key >> 31);
+  return key;
 }

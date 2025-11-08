@@ -16,6 +16,12 @@ if command -v valgrind &> /dev/null; then
 else
     echo -e "${YELLOW}⚠ Valgrind not found - skipping memory leak checks${NC}"
 fi
+
+if [ "$USE_WASM" = true ]; then
+    USE_VALGRIND=false
+    echo -e "${YELLOW}⚠ WebAssembly build - skipping memory leak checks${NC}"
+fi
+
 echo ""
 
 echo "========================================"
@@ -28,6 +34,7 @@ TEST_FILES=(*.test.c)
 TOTAL_TESTS=${#TEST_FILES[@]}
 PASSED_TESTS=0
 FAILED_TESTS=()
+COMPILER="clang"
 
 for i in "${!TEST_FILES[@]}"; do
     TEST_FILE="${TEST_FILES[$i]}"
@@ -36,7 +43,18 @@ for i in "${!TEST_FILES[@]}"; do
     TEST_NUM=$((i + 1))
     
     echo -e "${YELLOW}[$TEST_NUM/$TOTAL_TESTS] Compiling ${TEST_NAME}.test...${NC}"
-    gcc -o "$TEST_BINARY" "$TEST_FILE" $SOURCES $CFLAGS 2>&1
+    if [ "$USE_WASM" = true ]; then
+        CFLAGS="$CFLAGS -s PTHREAD_POOL_SIZE=4 -s WASM=1 -s ALLOW_MEMORY_GROWTH=1 -s ENVIRONMENT=web,node -s MODULARIZE=1 -s EXPORT_ES6=1 -s ASYNCIFY=1"
+        COMPILER="emcc"
+        TEST_BINARY="${TEST_NAME}.js"
+    else
+        CFLAGS=""
+        # if compiler not set, default to clang
+        if [ -z "$COMPILER" ]; then
+            COMPILER="clang"
+        fi
+    fi
+    $COMPILER -o "$TEST_BINARY" "$TEST_FILE" $SOURCES $CFLAGS 2>&1
     
     if [ $? -ne 0 ]; then
         echo -e "${RED}✗ Compilation failed for ${TEST_NAME}.test${NC}"
@@ -54,8 +72,14 @@ for i in "${!TEST_FILES[@]}"; do
         valgrind $VALGRIND_FLAGS ./"$TEST_BINARY"
         RESULT=$?
     else
-        ./"$TEST_BINARY"
-        RESULT=$?
+        if [ "$USE_WASM" = true ]; then
+            # use node to execute one line JavaScript
+            node -e "try { const {default:run} = await import('./${TEST_BINARY}'); await run(); process.exit(0); } catch (e) { console.error('Error during WASM module instantiation:', e); process.exit(1); }"
+            RESULT=$?
+        else
+            ./"$TEST_BINARY"
+            RESULT=$?
+        fi
     fi
     
     if [ $RESULT -ne 0 ]; then
@@ -85,7 +109,11 @@ fi
 echo "========================================"
 
 # Cleanup
-rm -f *.test
+if [ "$USE_WASM" = true ]; then
+    rm -f *.wasm *.js
+else
+    rm -f *.test
+fi
 
 # Exit with failure if any tests failed
 if [ ${#FAILED_TESTS[@]} -ne 0 ]; then

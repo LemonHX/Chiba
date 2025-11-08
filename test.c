@@ -1,4 +1,4 @@
-#include "chiba/system/coroutine/coroutine.h"
+#include "chiba/coroutine/coroutine.h"
 #include <assert.h>
 
 #define STKSZ 32768
