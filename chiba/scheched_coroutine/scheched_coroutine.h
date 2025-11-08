@@ -62,9 +62,12 @@ void chiba_sco_exit(void);
 // Returns the user data of the currently running coroutine.
 anyptr chiba_sco_udata(void);
 
-// General information and statistics
-i64 chiba_sco_info_scheduled(void);
-i64 chiba_sco_info_running(void);
-i64 chiba_sco_info_paused(void);
-i64 chiba_sco_info_detached(void);
-const char *chiba_sco_info_method(void);
+typedef struct chiba_sco_info {
+  i64 scheduled;
+  i64 running;
+  i64 paused;
+  i64 detached;
+  cstr method;
+} chiba_sco_info;
+
+chiba_sco_info chiba_sco_info_all(void);
