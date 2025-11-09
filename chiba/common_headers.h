@@ -84,9 +84,11 @@ UTILS int get_cpu_count(void) {
   SYSTEM_INFO sysinfo;
   GetSystemInfo(&sysinfo);
   return sysinfo.dwNumberOfProcessors < 1 ? 1 : sysinfo.dwNumberOfProcessors;
-#else
+#elif !defined(__EMSCRIPTEN__)
   long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
   return (nprocs > 0) ? (int)nprocs : 1;
+#else
+  return 8; // 假设 8 核
 #endif
 }
 

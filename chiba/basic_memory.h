@@ -16,16 +16,16 @@ UTILS void CHIBA_INTERNAL_set_alloc_funcs(
 }
 
 UTILS anyptr CHIBA_INTERNAL_malloc(size_t size) {
-  return ((anyptr (*)(size_t))CHIBA_INTERNAL_malloc_func)(size);
+  return ((anyptr(*)(size_t))CHIBA_INTERNAL_malloc_func)(size);
 }
 
 UTILS anyptr CHIBA_INTERNAL_malloc_aligned(size_t alignment, size_t size) {
-  return ((anyptr (*)(size_t, size_t))CHIBA_INTERNAL_aligned_alloc_func)(
+  return ((anyptr(*)(size_t, size_t))CHIBA_INTERNAL_aligned_alloc_func)(
       alignment, size);
 }
 
 UTILS anyptr CHIBA_INTERNAL_realloc(anyptr ptr, size_t size) {
-  return ((anyptr (*)(anyptr, size_t))CHIBA_INTERNAL_realloc_func)(ptr, size);
+  return ((anyptr(*)(anyptr, size_t))CHIBA_INTERNAL_realloc_func)(ptr, size);
 }
 
 UTILS void CHIBA_INTERNAL_free(anyptr ptr) {
@@ -40,3 +40,5 @@ UTILS void CHIBA_INTERNAL_free(anyptr ptr) {
             __LINE__, __func__, ##__VA_ARGS__);                                \
     abort();                                                                   \
   } while (0)
+
+#include "utils/murmurhash3.h"

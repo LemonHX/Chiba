@@ -13,3 +13,14 @@ Especially thanks to some Non-Posix compatible OS, we had to vendor in some thir
         - Apache License v2 (v3+)
         - LGPL v3 (v2+)
 
+- lsquic: LiteSpeed QUIC library
+    - Source URL: https://github.com/litespeedtech/lsquic
+    - License: MIT License
+
+- boringssl: Google BoringSSL
+    - Source URL: https://boringssl.googlesource.com/boringssl.git
+    - License: BoringSSL is licensed under the OpenSSL license and the SSLeay license.
+
+- mimalloc: A general purpose allocator with excellent performance
+    - Source URL: https://github.com/microsoft/mimalloc
+    - License: MIT License

@@ -7,10 +7,6 @@
 #error "Big endian architecture is not supported"
 #endif
 
-#ifdef __LITTLE_ENDIAN__
-#pragma message("INFO: Little endian architecture detected")
-#endif
-
 #define true 1
 #define false 0
 #define bool u8
@@ -37,3 +33,25 @@ typedef double f64;
 // need box to pass
 typedef long long i64;
 typedef unsigned long long u64;
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+UTILS u64 get_time_in_nanoseconds() {
+  LARGE_INTEGER freq, counter;
+  QueryPerformanceFrequency(&freq);
+  QueryPerformanceCounter(&counter);
+  return (u64)((counter.QuadPart * 1000000000ULL) / freq.QuadPart);
+}
+#elif !defined(__EMSCRIPTEN__) // POSIX
+#include <time.h>
+UTILS u64 get_time_in_nanoseconds() {
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return (u64)ts.tv_sec * 1000000000ULL + (u64)ts.tv_nsec;
+}
+#else
+UTILS u64 get_time_in_nanoseconds() {
+  // emscripten_get_now() 返回毫秒，转换为纳秒
+  return (u64)(emscripten_get_now() * 1000000.0);
+}
+#endif
