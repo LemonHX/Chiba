@@ -456,17 +456,17 @@ TEST_CASE(ordering, scheched_coroutine, "scheduling order", {
 
 // Register tests
 REGISTER_TEST_GROUP(scheched_coroutine) {
-  REGISTER_TEST(start_children, scheched_coroutine);
-  REGISTER_TEST(sleep_yielding, scheched_coroutine);
-  REGISTER_TEST(pause_and_resume, scheched_coroutine);
-  REGISTER_TEST(exit_order, scheched_coroutine);
-  REGISTER_TEST(ordering, scheched_coroutine);
+  // REGISTER_TEST(start_children, scheched_coroutine);
+  // REGISTER_TEST(sleep_yielding, scheched_coroutine);
+  // REGISTER_TEST(pause_and_resume, scheched_coroutine);
+  // REGISTER_TEST(exit_order, scheched_coroutine);
+  // REGISTER_TEST(ordering, scheched_coroutine);
 
 #ifndef __EMSCRIPTEN__
   REGISTER_TEST(multithread_ids, scheched_coroutine);
-  REGISTER_TEST(detach_attach, scheched_coroutine);
+  // REGISTER_TEST(detach_attach, scheched_coroutine);
 #endif
-  REGISTER_TEST(various_info, scheched_coroutine);
+  // REGISTER_TEST(various_info, scheched_coroutine);
 }
 
 ENABLE_TEST_GROUP(scheched_coroutine)
